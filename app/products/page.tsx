@@ -73,12 +73,16 @@ export default function ProductsPage() {
   const openFiltersModal = () => {
     setIsFiltersModalOpen(true)
     hideNavbar()
+    // Блокируем скролл body
+    document.body.style.overflow = 'hidden'
   }
 
   // Функция для закрытия модального окна
   const closeFiltersModal = () => {
     setIsFiltersModalOpen(false)
     showNavbar()
+    // Восстанавливаем скролл body
+    document.body.style.overflow = ''
   }
 
   // Обработка свайпа для закрытия модального окна
@@ -408,7 +412,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Содержимое фильтров */}
-              <div className="px-6 py-4 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="px-6 py-4 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 {/* Категории */}
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

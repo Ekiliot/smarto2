@@ -77,8 +77,12 @@ export default function ProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     if (showDescriptionModal) {
       hideNavbar()
+      // Блокируем скролл body
+      document.body.style.overflow = 'hidden'
     } else {
       showNavbar()
+      // Восстанавливаем скролл body
+      document.body.style.overflow = ''
     }
   }, [showDescriptionModal, hideNavbar, showNavbar])
 
@@ -816,7 +820,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Контент */}
-              <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]" style={{ overscrollBehavior: 'contain' }}>
                 <div className="space-y-6">
                   {/* Описание */}
                   <div>

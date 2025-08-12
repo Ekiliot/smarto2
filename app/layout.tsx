@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: 'Leading smart home and electronics store in Moldova. Discover the latest smart devices, gadgets, and technology for your home.',
   keywords: 'smart home, electronics, gadgets, Moldova, smart devices, automation',
   authors: [{ name: 'Smarto Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
 }
 
 export default function RootLayout({

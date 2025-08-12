@@ -95,6 +95,241 @@
   .mobile-nav-safe-area {
     @apply pb-20 md:pb-0;
   }
+  
+  /* Безопасная область для мобильных устройств */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Мобильные стили для чата */
+  @supports (padding: max(0px)) {
+    .pb-safe {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+  }
+  
+  /* Улучшенная прокрутка для мобильных */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Предотвращение зума на мобильных */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  /* Улучшенные стили для мобильных кнопок */
+  @media (max-width: 768px) {
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+  
+  /* Поддержка безопасных областей для устройств с "челкой" */
+  @supports (padding: env(safe-area-inset-top)) {
+    .safe-area-top {
+      padding-top: env(safe-area-inset-top);
+    }
+    
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .safe-area-left {
+      padding-left: env(safe-area-inset-left);
+    }
+    
+    .safe-area-right {
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+  
+  /* Стили для мобильного чата */
+  .chat-mobile {
+    height: 100vh;
+    height: 100dvh; /* Динамическая высота viewport */
+  }
+  
+  /* Улучшенные стили для мобильных полей ввода */
+  .chat-input-mobile {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .dark .chat-input-mobile {
+    background: rgba(17, 24, 39, 0.95);
+  }
+  
+  /* Улучшенные стили для мобильных заголовков */
+  .chat-header-mobile {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .dark .chat-header-mobile {
+    background: rgba(31, 41, 55, 0.95);
+  }
+  
+  /* Улучшенная прокрутка для мобильных устройств */
+  .chat-messages-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+  
+  /* Стили для мобильных сообщений */
+  .chat-message-mobile {
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Оптимизация анимаций для мобильных устройств */
+  @media (prefers-reduced-motion: reduce) {
+    .chat-messages-mobile {
+      scroll-behavior: auto;
+    }
+  }
+  
+  /* Улучшенные стили для мобильных кнопок чата */
+  .chat-button-mobile {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Улучшенные стили для выравнивания иконок в кнопках */
+  .chat-button-mobile svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Точное выравнивание иконок в кнопках */
+  .chat-button-mobile.flex {
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .chat-button-mobile.flex svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  
+  /* Специальные стили для кнопки отправки */
+  .chat-button-mobile.flex[title="Отправить"] {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .chat-button-mobile.flex[title="Отправить"] svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Выравнивание кнопок по отношению к полю ввода */
+  .chat-input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .chat-input-container .chat-button-mobile {
+    flex-shrink: 0;
+    align-self: center;
+  }
+  
+  .chat-input-container textarea {
+    align-self: center;
+  }
+  
+  /* Улучшенные стили для мобильных полей ввода */
+  .chat-input-field-mobile {
+    -webkit-appearance: none;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+  
+  /* Улучшенные стили для мобильных изображений */
+  .chat-image-mobile {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  /* Улучшенные стили для мобильных видео */
+  .chat-video-mobile {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  /* Улучшенные стили для мобильных устройств с высоким DPI */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .chat-image-mobile,
+    .chat-video-mobile {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+  
+  /* Улучшенные стили для мобильных устройств в ландшафтной ориентации */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .chat-mobile {
+      height: 100vh;
+    }
+    
+    .chat-header-mobile {
+      padding: 8px 12px;
+    }
+  }
+  
+  /* Улучшенные стили для очень маленьких экранов */
+  @media (max-width: 375px) {
+    .chat-header-mobile {
+      padding: 8px;
+    }
+    
+    .chat-input-mobile {
+      padding: 8px;
+    }
+    
+    .chat-messages-mobile {
+      padding: 12px;
+    }
+  }
+  
+  /* Улучшенные стили для больших мобильных экранов */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .chat-mobile {
+      max-width: 768px;
+      margin: 0 auto;
+    }
+  }
+  
+  /* Специфичные стили для iOS */
+  @supports (-webkit-touch-callout: none) {
+    .chat-input-mobile {
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+    
+    .chat-header-mobile {
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+  }
+  
+  /* Специфичные стили для Android */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    .chat-button-mobile {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+  }
 }
 
 /* Custom scrollbar */

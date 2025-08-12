@@ -13,7 +13,7 @@ export default function ChatPage() {
   // Если пользователь не авторизован, показываем сообщение
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center">
@@ -37,44 +37,18 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
-      {/* Хедер только для десктопа */}
-      <div className="hidden md:block">
-        <Header />
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Основной хедер */}
+      <Header />
       
-      {/* Мобильная версия */}
+      {/* Мобильная версия чата */}
       <div className="md:hidden">
-        <main className="h-screen flex flex-col">
-          {/* Заголовок */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center space-x-3">
-              <Link
-                href="/support"
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  💬 Чат с поддержкой
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Мы ответим в течение 5 минут
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Интерфейс чата */}
-          <div className="flex-1">
-            <ChatInterface />
+        <div className="chat-mobile flex flex-col safe-area-top">
+          {/* Интерфейс чата - занимает все доступное пространство */}
+          <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
+            <ChatInterface isMobile={true} />
           </div>
-        </main>
+        </div>
       </div>
 
       {/* Десктопная версия */}
@@ -111,7 +85,7 @@ export default function ChatPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
             style={{ height: '600px' }}
           >
-            <ChatInterface />
+            <ChatInterface isMobile={false} />
           </motion.div>
 
           {/* Дополнительная информация */}

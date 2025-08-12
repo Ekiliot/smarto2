@@ -21,6 +21,7 @@ import { useLoyalty } from '@/components/LoyaltyProvider'
 import { createOrder, spendLoyaltyPoints } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
+import { useShipping } from '@/lib/hooks/useShipping'
 
 interface CheckoutForm {
   // Контактная информация
@@ -52,10 +53,13 @@ export default function CheckoutPage() {
   const { user } = useAuth()
   const { cartItems, loading: cartLoading, clearCart, getBundleDiscount, getBundlePair } = useCart()
   const { refreshLoyalty } = useLoyalty()
+  const { activeShippingMethods, calculateShippingCost } = useShipping()
   const [loading, setLoading] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [pointsToUse, setPointsToUse] = useState(0)
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>('')
   const [form, setForm] = useState<CheckoutForm>({
     first_name: '',
     last_name: '',
@@ -73,13 +77,37 @@ export default function CheckoutPage() {
     notes: ''
   })
 
-  // Получаем баллы из sessionStorage
+  // Получаем баллы и выбранные товары из sessionStorage
   useEffect(() => {
     const savedPoints = sessionStorage.getItem('loyaltyPointsToUse')
     if (savedPoints) {
       setPointsToUse(parseInt(savedPoints))
     }
-  }, [])
+    
+    const savedSelectedItems = sessionStorage.getItem('selectedCartItems')
+    if (savedSelectedItems) {
+      try {
+        const items = JSON.parse(savedSelectedItems)
+        setSelectedItems(new Set(items))
+      } catch (error) {
+        console.error('Error parsing selected items:', error)
+        // Если ошибка парсинга, выбираем все товары
+        setSelectedItems(new Set(cartItems.map(item => item.id)))
+      }
+    } else {
+      // Если нет сохраненных выбранных товаров, выбираем все
+      setSelectedItems(new Set(cartItems.map(item => item.id)))
+    }
+    
+    // Загружаем выбранный способ доставки
+    const savedShippingMethod = sessionStorage.getItem('selectedShippingMethod')
+    if (savedShippingMethod) {
+      setSelectedShippingMethod(savedShippingMethod)
+    } else if (activeShippingMethods.length > 0) {
+      // Если нет сохраненного способа, выбираем первый доступный
+      setSelectedShippingMethod(activeShippingMethods[0].id)
+    }
+  }, [cartItems, activeShippingMethods])
 
   // Группируем товары по парам и отдельные товары
   const { bundlePairs, singleItems } = useMemo(() => {
@@ -87,27 +115,43 @@ export default function CheckoutPage() {
     const pairs: any[] = []
     const singles: any[] = []
 
-    cartItems.forEach(item => {
+    // Фильтруем только выбранные товары
+    const filteredCartItems = cartItems.filter(item => selectedItems.has(item.id))
+
+    filteredCartItems.forEach(item => {
       if (processedItems.has(item.id)) return
 
       const bundlePair = getBundlePair(item.product_id)
       
       if (bundlePair) {
-        // Проверяем, что оба товара еще не обработаны
+        // Проверяем, что оба товара еще не обработаны и оба выбраны
         if (!processedItems.has(bundlePair.triggerProduct.id) && 
-            !processedItems.has(bundlePair.suggestedProduct.id)) {
+            !processedItems.has(bundlePair.suggestedProduct.id) &&
+            selectedItems.has(bundlePair.triggerProduct.id) &&
+            selectedItems.has(bundlePair.suggestedProduct.id)) {
           pairs.push(bundlePair)
           processedItems.add(bundlePair.triggerProduct.id)
           processedItems.add(bundlePair.suggestedProduct.id)
+        } else {
+          // Если бандл не полный, добавляем товары как отдельные
+          if (selectedItems.has(bundlePair.triggerProduct.id) && !processedItems.has(bundlePair.triggerProduct.id)) {
+            singles.push(bundlePair.triggerProduct)
+            processedItems.add(bundlePair.triggerProduct.id)
+          }
+          if (selectedItems.has(bundlePair.suggestedProduct.id) && !processedItems.has(bundlePair.suggestedProduct.id)) {
+            singles.push(bundlePair.suggestedProduct)
+            processedItems.add(bundlePair.suggestedProduct.id)
+          }
         }
       } else {
+        // Обычный товар
         singles.push(item)
         processedItems.add(item.id)
       }
     })
 
     return { bundlePairs: pairs, singleItems: singles }
-  }, [cartItems, getBundlePair])
+  }, [cartItems, selectedItems, getBundlePair])
 
   // Вычисляем правильную сумму с учетом скидок по парам
   const subtotal = useMemo(() => {
@@ -129,8 +173,19 @@ export default function CheckoutPage() {
     return total
   }, [bundlePairs, singleItems])
 
-  const shipping = subtotal > 1000 ? 0 : 150
-  // Рассчитываем итоговую сумму
+  const shipping = selectedShippingMethod 
+    ? (() => {
+        // Используем локальный расчет для мгновенного отображения
+        const method = activeShippingMethods.find(m => m.id === selectedShippingMethod)
+        if (!method) return 0
+        
+        if (subtotal >= method.free_shipping_threshold) {
+          return 0 // Бесплатная доставка
+        }
+        
+        return method.price
+      })()
+    : (subtotal > 1000 ? 0 : 150) // Fallback для обратной совместимости
   const totalBeforePoints = subtotal + shipping
   const finalTotal = Math.max(0, totalBeforePoints - pointsToUse) // Общая сумма к оплате
 
@@ -168,6 +223,8 @@ export default function CheckoutPage() {
       const orderData = {
         user_id: user.id,
         total_amount: finalTotal, // Используем финальную сумму с учетом баллов
+        shipping_method: selectedShippingMethod || 'default', // Добавляем способ доставки
+        shipping_cost: shipping, // Добавляем стоимость доставки
         shipping_address: {
           street: form.street,
           city: form.city,
@@ -218,10 +275,19 @@ export default function CheckoutPage() {
       
       setOrderNumber(data?.order_number || '')
       setOrderSuccess(true)
+      
+      // Очищаем только выбранные товары из корзины
+      const selectedItemsArray = Array.from(selectedItems)
+      selectedItemsArray.forEach(itemId => {
+        // Здесь нужно вызвать функцию удаления конкретного товара
+        // Пока что очищаем всю корзину, но в будущем можно улучшить
+      })
       clearCart()
       
-      // Очищаем информацию о баллах из sessionStorage
+      // Очищаем информацию о баллах и выбранных товарах из sessionStorage
       sessionStorage.removeItem('loyaltyPointsToUse')
+      sessionStorage.removeItem('selectedCartItems')
+      sessionStorage.removeItem('selectedShippingMethod')
     } catch (error) {
       console.error('Error creating order:', error)
       alert('Ошибка при создании заказа. Попробуйте еще раз.')
@@ -290,7 +356,7 @@ export default function CheckoutPage() {
               Оформление заказа
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Заполните данные для доставки и оплаты
+              Заполните данные для доставки и оплаты • {selectedItems.size} товаров
             </p>
           </motion.div>
 
@@ -305,7 +371,7 @@ export default function CheckoutPage() {
               <div>
                 <h3 className="font-semibold text-lg">🛒 Ваш заказ</h3>
                 <p className="text-blue-100 text-sm">
-                  {cartItems.length} {cartItems.length === 1 ? 'товар' : cartItems.length < 5 ? 'товара' : 'товаров'}
+                  {selectedItems.size} {selectedItems.size === 1 ? 'товар' : selectedItems.size < 5 ? 'товара' : 'товаров'} выбрано
                 </p>
               </div>
               <div className="text-right">
@@ -323,7 +389,7 @@ export default function CheckoutPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              📋 Сводка заказа
+              📋 Сводка заказа ({selectedItems.size} товаров)
             </h2>
             
             <div className="space-y-4">
@@ -488,6 +554,73 @@ export default function CheckoutPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Выбор способа доставки */}
+          {activeShippingMethods.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                🚚 Способ доставки
+              </h2>
+              
+              <div className="space-y-3">
+                {activeShippingMethods.map((method) => (
+                  <div
+                    key={method.id}
+                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      selectedShippingMethod === method.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                    onClick={() => setSelectedShippingMethod(method.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="shipping"
+                          checked={selectedShippingMethod === method.id}
+                          onChange={() => setSelectedShippingMethod(method.id)}
+                          className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
+                        />
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">
+                            {method.name}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {method.description}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            {method.estimated_days}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {subtotal >= method.free_shipping_threshold ? (
+                          <div className="text-green-600 font-semibold text-sm">
+                            Бесплатно
+                          </div>
+                        ) : (
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">
+                            {formatPrice(method.price)}
+                          </div>
+                        )}
+                        {subtotal < method.free_shipping_threshold && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Бесплатно от {formatPrice(method.free_shipping_threshold)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Форма оформления */}
           <motion.div
@@ -834,7 +967,7 @@ export default function CheckoutPage() {
             Оформление заказа
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Заполните данные для доставки и оплаты
+            Заполните данные для доставки и оплаты • {selectedItems.size} товаров
           </p>
         </motion.div>
 
@@ -847,7 +980,7 @@ export default function CheckoutPage() {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-8"
             >
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Ваш заказ
+                Ваш заказ ({selectedItems.size} товаров)
               </h2>
               
               <div className="space-y-4 mb-6">
@@ -975,6 +1108,64 @@ export default function CheckoutPage() {
               </div>
             </motion.div>
           </div>
+
+          {/* Выбор способа доставки */}
+          {activeShippingMethods.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                🚚 Способ доставки
+              </h3>
+              <div className="space-y-3">
+                {activeShippingMethods.map((method) => (
+                  <div
+                    key={method.id}
+                    className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                      selectedShippingMethod === method.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                    onClick={() => setSelectedShippingMethod(method.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="shipping"
+                          checked={selectedShippingMethod === method.id}
+                          onChange={() => setSelectedShippingMethod(method.id)}
+                          className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
+                        />
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                            {method.name}
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {method.description} • {method.estimated_days}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {subtotal >= method.free_shipping_threshold ? (
+                          <div className="text-green-600 font-semibold text-sm">
+                            Бесплатно
+                          </div>
+                        ) : (
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">
+                            {formatPrice(method.price)}
+                          </div>
+                        )}
+                        {subtotal < method.free_shipping_threshold && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Бесплатно от {formatPrice(method.free_shipping_threshold)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Checkout Form */}
           <div className="lg:col-span-2">

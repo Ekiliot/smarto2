@@ -15,7 +15,8 @@ import {
   Gift,
   Grid,
   Coins,
-  MessageCircle
+  MessageCircle,
+  Truck
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
@@ -136,6 +137,15 @@ export default function AdminPage() {
       href: '/admin/bundles',
       color: 'from-indigo-500 to-indigo-600',
       bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+      count: 0
+    },
+    {
+      title: 'Доставка',
+      description: 'Управление способами доставки',
+      icon: Truck,
+      href: '/admin/shipping',
+      color: 'from-teal-500 to-teal-600',
+      bgColor: 'bg-teal-50 dark:bg-teal-900/20',
       count: 0
     },
     {

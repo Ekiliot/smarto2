@@ -23,14 +23,17 @@ import { useCart } from '@/components/CartProvider'
 import { useAuth } from '@/components/AuthProvider'
 import { useLoyalty } from '@/components/LoyaltyProvider'
 import { calculateMaxPointsForOrder } from '@/lib/supabase'
+import { useShipping } from '@/lib/hooks/useShipping'
 
 export default function CartPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { loyaltyPoints } = useLoyalty()
+  const { activeShippingMethods, calculateShippingCost } = useShipping()
   const [pointsToUse, setPointsToUse] = useState(0)
   const [maxPointsAllowed, setMaxPointsAllowed] = useState(0)
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>('')
   const { 
     cartItems, 
     loading, 
@@ -142,7 +145,19 @@ export default function CartPage() {
     return total
   }, [bundlePairs, singleItems])
 
-  const shipping = subtotal > 1000 ? 0 : 150
+  const shipping = selectedShippingMethod 
+    ? (() => {
+        // Используем локальный расчет для мгновенного отображения
+        const method = activeShippingMethods.find(m => m.id === selectedShippingMethod)
+        if (!method) return 0
+        
+        if (subtotal >= method.free_shipping_threshold) {
+          return 0 // Бесплатная доставка
+        }
+        
+        return method.price
+      })()
+    : (subtotal > 1000 ? 0 : 150) // Fallback для обратной совместимости
   const totalBeforePoints = subtotal + shipping
   const pointsDiscount = pointsToUse
   const finalTotal = Math.max(0, totalBeforePoints - pointsDiscount)
@@ -181,6 +196,17 @@ export default function CartPage() {
       sessionStorage.setItem('loyaltyPointsToUse', pointsToUse.toString())
     } else {
       sessionStorage.removeItem('loyaltyPointsToUse')
+    }
+    
+    // Передаем информацию о выбранных товарах в sessionStorage
+    const selectedItemsArray = Array.from(selectedItems)
+    sessionStorage.setItem('selectedCartItems', JSON.stringify(selectedItemsArray))
+    
+    // Передаем информацию о выбранном способе доставки
+    if (selectedShippingMethod) {
+      sessionStorage.setItem('selectedShippingMethod', selectedShippingMethod)
+    } else {
+      sessionStorage.removeItem('selectedShippingMethod')
     }
     
     // Переходим на страницу оформления заказа
@@ -308,6 +334,75 @@ export default function CartPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Выбор способа доставки */}
+          {activeShippingMethods.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="space-y-4"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                🚚 Способ доставки
+              </h2>
+              
+              <div className="space-y-3">
+                {activeShippingMethods.map((method) => (
+                  <div
+                    key={method.id}
+                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      selectedShippingMethod === method.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                    }`}
+                    onClick={() => setSelectedShippingMethod(method.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="radio"
+                            name="shipping"
+                            checked={selectedShippingMethod === method.id}
+                            onChange={() => setSelectedShippingMethod(method.id)}
+                            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
+                          />
+                          <div>
+                            <h4 className="font-medium text-gray-900 dark:text-white">
+                              {method.name}
+                            </h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {method.description}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              {method.estimated_days}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {subtotal >= method.free_shipping_threshold ? (
+                          <div className="text-green-600 font-semibold text-sm">
+                            Бесплатно
+                          </div>
+                        ) : (
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">
+                            {formatPrice(method.price)}
+                          </div>
+                        )}
+                        {subtotal < method.free_shipping_threshold && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Бесплатно от {formatPrice(method.free_shipping_threshold)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Бандлы с товарами */}
           {bundlePairs.length > 0 && (
@@ -1096,6 +1191,67 @@ export default function CartPage() {
                         </button>
                       </div>
                     </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Выбор способа доставки */}
+            {activeShippingMethods.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  🚚 Способ доставки
+                </h3>
+                <div className="space-y-3">
+                  {activeShippingMethods.map((method) => (
+                    <div
+                      key={method.id}
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        selectedShippingMethod === method.id
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                      }`}
+                      onClick={() => setSelectedShippingMethod(method.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="radio"
+                            name="shipping"
+                            checked={selectedShippingMethod === method.id}
+                            onChange={() => setSelectedShippingMethod(method.id)}
+                            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
+                          />
+                          <div>
+                            <h4 className="font-medium text-gray-900 dark:text-white">
+                              {method.name}
+                            </h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {method.description}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              {method.estimated_days}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {subtotal >= method.free_shipping_threshold ? (
+                            <div className="text-green-600 font-semibold text-sm">
+                              Бесплатно
+                            </div>
+                          ) : (
+                            <div className="text-lg font-bold text-gray-900 dark:text-white">
+                              {formatPrice(method.price)}
+                            </div>
+                          )}
+                          {subtotal < method.free_shipping_threshold && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Бесплатно от {formatPrice(method.free_shipping_threshold)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

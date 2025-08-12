@@ -20,6 +20,9 @@ export function BottomNavigation() {
   const safeCartCount = typeof cartCount === 'number' ? cartCount : 0
   const safeWishlistCount = typeof wishlistCount === 'number' ? wishlistCount : 0
 
+  // Скрываем навигацию на странице чата поддержки
+  const shouldHide = pathname === '/support/chat'
+
   const navItems = [
     {
       href: '/',
@@ -58,7 +61,7 @@ export function BottomNavigation() {
   return (
     <motion.nav
       initial={{ y: 100 }}
-      animate={{ y: isNavbarHidden ? 100 : 0 }}
+      animate={{ y: (isNavbarHidden || shouldHide) ? 100 : 0 }}
       transition={{ duration: 0.3 }}
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 shadow-lg"
     >

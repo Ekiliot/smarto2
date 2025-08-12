@@ -19,9 +19,10 @@ import { formatFileSize, isImageFile, isVideoFile, isAudioFile } from '@/lib/sup
 
 interface ChatInterfaceProps {
   className?: string
+  isMobile?: boolean
 }
 
-export function ChatInterface({ className = '' }: ChatInterfaceProps) {
+export function ChatInterface({ className = '', isMobile = false }: ChatInterfaceProps) {
   const {
     currentChat,
     loading,
@@ -132,7 +133,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
           }`}>
             {/* Текст сообщения */}
             {message.text && (
-              <p className="text-sm whitespace-pre-wrap break-words">
+              <p className="text-sm whitespace-pre-wrap break-words chat-message-mobile">
                 {message.text}
               </p>
             )}
@@ -144,7 +145,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
                   <img
                     src={message.file_url}
                     alt={message.file_name || 'Изображение'}
-                    className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity chat-image-mobile"
                     onClick={() => window.open(message.file_url, '_blank')}
                   />
                 )}
@@ -153,7 +154,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
                   <video
                     src={message.file_url}
                     controls
-                    className="max-w-full h-auto rounded-lg"
+                    className="max-w-full h-auto rounded-lg chat-video-mobile"
                     preload="metadata"
                   >
                     <source src={message.file_url} type="video/mp4" />
@@ -245,7 +246,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         ) : (
           <button
             onClick={() => removeFileUpload(fileUpload.file)}
-            className="text-gray-400 hover:text-red-500 transition-colors"
+            className="text-gray-400 hover:text-red-500 transition-colors chat-button-mobile flex items-center justify-center"
           >
             <X className="h-4 w-4" />
           </button>
@@ -277,24 +278,26 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      {/* Заголовок чата */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">
-            💬 Поддержка
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {typing ? 'Печатает...' : 'Онлайн'}
-          </p>
+      {/* Заголовок чата - только для десктопа */}
+      {!isMobile && (
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              💬 Поддержка
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {typing ? 'Печатает...' : 'Онлайн'}
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-green-600 dark:text-green-400">Онлайн</span>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-xs text-green-600 dark:text-green-400">Онлайн</span>
-        </div>
-      </div>
+      )}
 
       {/* Сообщения */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 chat-messages-mobile ${isMobile ? 'pb-0' : ''}`} style={isMobile ? { paddingBottom: '100px' } : {}}>
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -350,13 +353,17 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         </motion.div>
       )}
 
-      {/* Поле ввода */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div className="flex items-end space-x-3">
+      {/* Поле ввода - прикреплено к низу на мобильных */}
+      <div className={`border-t border-gray-200 dark:border-gray-700 ${
+        isMobile 
+          ? 'fixed bottom-0 left-0 right-0 z-40 p-3 safe-area-bottom chat-input-mobile' 
+          : 'p-4 bg-white dark:bg-gray-800'
+      }`}>
+        <div className="flex items-center space-x-2">
           {/* Кнопка прикрепления файла */}
           <button
             onClick={() => setShowFileInput(!showFileInput)}
-            className="flex-shrink-0 p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors"
+            className="flex-shrink-0 p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors chat-button-mobile flex items-center justify-center"
             title="Прикрепить файл"
           >
             <Paperclip className="h-5 w-5" />
@@ -370,16 +377,16 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Напишите сообщение..."
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white chat-input-field-mobile"
               rows={1}
               style={{
-                minHeight: '44px',
-                maxHeight: '120px'
+                minHeight: '40px',
+                maxHeight: '100px'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement
                 target.style.height = 'auto'
-                target.style.height = Math.min(target.scrollHeight, 120) + 'px'
+                target.style.height = Math.min(target.scrollHeight, 100) + 'px'
               }}
             />
           </div>
@@ -388,13 +395,13 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
           <button
             onClick={handleSendMessage}
             disabled={!messageText.trim() || sending}
-            className="flex-shrink-0 p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-shrink-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors chat-button-mobile flex items-center justify-center"
             title="Отправить"
           >
             {sending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             )}
           </button>
         </div>
@@ -405,7 +412,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-3"
+            className="mt-2"
           >
             <input
               ref={fileInputRef}
@@ -418,7 +425,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm chat-button-mobile flex items-center justify-center"
               >
                 Выбрать файлы
               </button>
