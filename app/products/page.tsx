@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, Grid, List, ChevronDown, ShoppingCart, Heart, Eye } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Header } from '@/components/Header'
 import { ProductCard } from '@/components/ProductCard'
 import { getAllProducts, getAllCategories, Product, Category } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
+import { useNavbarVisibility } from '@/components/NavbarVisibilityProvider'
 
 export default function ProductsPage() {
   const searchParams = useSearchParams()
@@ -21,6 +22,10 @@ export default function ProductsPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000])
   const [minPrice, setMinPrice] = useState<number>(0)
   const [maxPrice, setMaxPrice] = useState<number>(15000)
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const [dragY, setDragY] = useState(0)
+  const { hideNavbar, showNavbar } = useNavbarVisibility()
 
   // Загружаем данные
   useEffect(() => {
@@ -54,6 +59,35 @@ export default function ProductsPage() {
       setSelectedCategory(categoryParam)
     }
   }, [searchParams])
+
+  // Функция для закрытия модального окна свайпом
+  const handleSwipeToClose = (direction: 'up' | 'down' | 'left' | 'right') => {
+    if (direction === 'down') {
+      setIsFiltersModalOpen(false)
+      // Восстанавливаем скролл body
+      document.body.style.overflow = ''
+    }
+  }
+
+  // Функция для открытия модального окна
+  const openFiltersModal = () => {
+    setIsFiltersModalOpen(true)
+    hideNavbar()
+  }
+
+  // Функция для закрытия модального окна
+  const closeFiltersModal = () => {
+    setIsFiltersModalOpen(false)
+    showNavbar()
+  }
+
+  // Обработка свайпа для закрытия модального окна
+  const handleDragEnd = (event: any, info: any) => {
+    if (info.offset.y > 100) {
+      closeFiltersModal()
+    }
+    setDragY(0)
+  }
 
   // Фильтрация и сортировка продуктов
   const filteredAndSortedProducts = useMemo(() => {
@@ -125,43 +159,22 @@ export default function ProductsPage() {
           </p>
         </motion.div>
 
-        {/* Mobile Quick Filters - только на мобильных */}
+        {/* Mobile Filters Button - только на мобильных */}
         <div className="sm:hidden mb-6">
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Быстрые фильтры
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedCategory('all')}
-                className={`px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  selectedCategory === 'all'
-                    ? 'bg-primary-600 text-white shadow-lg'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900'
-                }`}
-              >
-                Все
-              </motion.button>
-              
-              {categories.slice(0, 4).map((category) => (
-                <motion.button
-                  key={category.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    selectedCategory === category.name
-                      ? 'bg-primary-600 text-white shadow-lg'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900'
-                  }`}
-                >
-                  {category.name}
-                </motion.button>
-              ))}
-            </div>
-          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={openFiltersModal}
+            className="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Filter className="h-5 w-5 text-primary-600" />
+            <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              Фильтры и сортировка
+            </span>
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </motion.button>
         </div>
 
         {/* Desktop Filters and Controls - скрыты на мобильных */}
@@ -298,110 +311,7 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Mobile Controls - только на мобильных */}
-        <div className="sm:hidden mb-6">
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-4">
-            <div className="space-y-4">
-              {/* Price Filter */}
-              <div className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Диапазон цен
-                </span>
-                <div className="flex items-center space-x-3">
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">От</label>
-                    <input
-                      type="number"
-                      value={minPrice}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0
-                        setMinPrice(value)
-                        setPriceRange([value, priceRange[1]])
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">До</label>
-                    <input
-                      type="number"
-                      value={maxPrice}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 15000
-                        setMaxPrice(value)
-                        setPriceRange([priceRange[0], value])
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      placeholder="15000"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Sort and View Controls */}
-              <div className="space-y-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                {/* Sort Dropdown */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Сортировка
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-3 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
-                    >
-                      <option value="featured">Рекомендуемые</option>
-                      <option value="price-low">Цена: по возрастанию</option>
-                      <option value="price-high">Цена: по убыванию</option>
-                      <option value="rating">По рейтингу</option>
-                      <option value="newest">Новинки</option>
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* View Mode Toggle */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Вид отображения
-                  </label>
-                  <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setViewMode('grid')}
-                      className={`flex-1 py-2.5 px-3 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
-                        viewMode === 'grid'
-                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                      title="Сетка"
-                    >
-                      <Grid className="h-4 w-4" />
-                      <span className="text-sm font-medium">Сетка</span>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setViewMode('list')}
-                      className={`flex-1 py-2.5 px-3 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
-                        viewMode === 'list'
-                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                      title="Список"
-                    >
-                      <List className="h-4 w-4" />
-                      <span className="text-sm font-medium">Список</span>
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Results Count */}
         <div className="mb-4 sm:mb-6">
@@ -450,6 +360,201 @@ export default function ProductsPage() {
           </motion.div>
         )}
       </main>
+
+      {/* Модальное окно с фильтрами */}
+      <AnimatePresence>
+        {isFiltersModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            onClick={closeFiltersModal}
+          >
+            <motion.div
+              ref={modalRef}
+              initial={{ y: '100%' }}
+              animate={{ y: dragY }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.1}
+              onDragEnd={handleDragEnd}
+              dragMomentum={false}
+            >
+              {/* Handle для свайпа */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              </div>
+
+              {/* Заголовок */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Фильтры и сортировка
+                  </h2>
+                  <button
+                    onClick={closeFiltersModal}
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Содержимое фильтров */}
+              <div className="px-6 py-4 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+                {/* Категории */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Категории
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedCategory('all')}
+                      className={`p-3 rounded-xl font-medium text-sm transition-all duration-200 ${
+                        selectedCategory === 'all'
+                          ? 'bg-primary-600 text-white shadow-lg'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900'
+                      }`}
+                    >
+                      Все категории
+                    </motion.button>
+                    
+                    {categories.map((category) => (
+                      <motion.button
+                        key={category.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedCategory(category.name)}
+                        className={`p-3 rounded-xl font-medium text-sm transition-all duration-200 ${
+                          selectedCategory === category.name
+                            ? 'bg-primary-600 text-white shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900'
+                        }`}
+                      >
+                        {category.name}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Диапазон цен */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Диапазон цен
+                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">От</label>
+                      <input
+                        type="number"
+                        value={minPrice}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0
+                          setMinPrice(value)
+                          setPriceRange([value, priceRange[1]])
+                        }}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">До</label>
+                      <input
+                        type="number"
+                        value={maxPrice}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 15000
+                          setMaxPrice(value)
+                          setPriceRange([priceRange[0], value])
+                        }}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        placeholder="15000"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Сортировка */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Сортировка
+                  </h3>
+                  <div className="relative">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-3 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
+                    >
+                      <option value="featured">Рекомендуемые</option>
+                      <option value="price-low">Цена: по возрастанию</option>
+                      <option value="price-high">Цена: по убыванию</option>
+                      <option value="rating">По рейтингу</option>
+                      <option value="newest">Новинки</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Вид отображения */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Вид отображения
+                  </h3>
+                  <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setViewMode('grid')}
+                      className={`flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
+                        viewMode === 'grid'
+                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <Grid className="h-4 w-4" />
+                      <span className="text-sm font-medium">Сетка</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setViewMode('list')}
+                      className={`flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
+                        viewMode === 'list'
+                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <List className="h-4 w-4" />
+                      <span className="text-sm font-medium">Список</span>
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Кнопка применить */}
+                <div className="pt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={closeFiltersModal}
+                    className="w-full bg-primary-600 text-white py-3 px-6 rounded-xl font-semibold text-lg hover:bg-primary-700 transition-colors shadow-lg"
+                  >
+                    Применить фильтры
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 } 

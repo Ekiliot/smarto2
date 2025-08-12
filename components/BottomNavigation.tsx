@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from './AuthProvider'
 import { useCart } from './CartProvider'
 import { useWishlist } from './WishlistProvider'
+import { useNavbarVisibility } from './NavbarVisibilityProvider'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -12,11 +13,8 @@ export function BottomNavigation() {
   const { user } = useAuth()
   const { cartCount } = useCart()
   const { wishlistCount } = useWishlist()
+  const { isNavbarHidden } = useNavbarVisibility()
   const pathname = usePathname()
-
-  // Проверяем, открыто ли модальное окно (по стилю body)
-  const isModalOpen = typeof document !== 'undefined' && 
-    document.body.style.overflow === 'hidden'
 
   // Убеждаемся, что счетчики являются числами
   const safeCartCount = typeof cartCount === 'number' ? cartCount : 0
@@ -60,7 +58,7 @@ export function BottomNavigation() {
   return (
     <motion.nav
       initial={{ y: 100 }}
-      animate={{ y: isModalOpen ? 100 : 0 }}
+      animate={{ y: isNavbarHidden ? 100 : 0 }}
       transition={{ duration: 0.3 }}
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 shadow-lg"
     >

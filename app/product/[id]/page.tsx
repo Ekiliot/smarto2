@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ShoppingCart, 
@@ -24,6 +24,7 @@ import { getAllProducts, getAllCategories, Product, Category } from '@/lib/supab
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/components/CartProvider'
 import { useWishlist } from '@/components/WishlistProvider'
+import { useNavbarVisibility } from '@/components/NavbarVisibilityProvider'
 
 interface ProductPageProps {
   params: {
@@ -42,8 +43,10 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { addToCart } = useCart()
   const { wishlistItems, isInWishlist } = useWishlist()
   const [showDescriptionModal, setShowDescriptionModal] = useState(false)
-  const [swipeStartY, setSwipeStartY] = useState(0)
-  const [swipeDeltaY, setSwipeDeltaY] = useState(0)
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([])
+  const [hasMoreProducts, setHasMoreProducts] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const { hideNavbar, showNavbar } = useNavbarVisibility()
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,25 +73,60 @@ export default function ProductPage({ params }: ProductPageProps) {
     loadData()
   }, [])
 
-  // Блокировка скролла страницы при открытом модальном окне
+  // Управление навбаром при открытии/закрытии модального окна
   useEffect(() => {
     if (showDescriptionModal) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
+      hideNavbar()
     } else {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
+      showNavbar()
+    }
+  }, [showDescriptionModal, hideNavbar, showNavbar])
+
+  // Инициализация отображаемых товаров (исключая текущий)
+  useEffect(() => {
+    if (products.length > 0) {
+      const filteredProducts = products.filter(p => p.id !== params.id)
+      const shuffledProducts = [...filteredProducts].sort(() => Math.random() - 0.5)
+      setDisplayedProducts(shuffledProducts.slice(0, 12)) // Начинаем с 12 товаров
+      setHasMoreProducts(filteredProducts.length > 12)
+    }
+  }, [products, params.id])
+
+  // Функция для загрузки дополнительных товаров
+  const loadMoreProducts = useCallback(() => {
+    if (isLoadingMore || !hasMoreProducts) return
+
+    setIsLoadingMore(true)
+    
+    setTimeout(() => {
+      const currentCount = displayedProducts.length
+      const filteredProducts = products.filter(p => p.id !== params.id)
+      const shuffledProducts = [...filteredProducts].sort(() => Math.random() - 0.5)
+      
+      const nextBatch = shuffledProducts.slice(currentCount, currentCount + 8)
+      
+      if (nextBatch.length > 0) {
+        setDisplayedProducts(prev => [...prev, ...nextBatch])
+        setHasMoreProducts(currentCount + nextBatch.length < filteredProducts.length)
+      } else {
+        setHasMoreProducts(false)
+      }
+      
+      setIsLoadingMore(false)
+    }, 500) // Имитация загрузки
+  }, [isLoadingMore, hasMoreProducts, displayedProducts.length, products, params.id])
+
+  // Хук для отслеживания скролла и автоматической загрузки
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1000) {
+        loadMoreProducts()
+      }
     }
 
-    // Очистка при размонтировании
-    return () => {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
-    }
-  }, [showDescriptionModal])
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadMoreProducts])
 
   const product = products.find(p => p.id === params.id)
 
@@ -161,26 +199,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
   }
 
-  const handleSwipeStart = (e: React.TouchEvent) => {
-    setSwipeStartY(e.touches[0].clientY)
-    setSwipeDeltaY(0)
-  }
 
-  const handleSwipeMove = (e: React.TouchEvent) => {
-    const currentY = e.touches[0].clientY
-    const deltaY = currentY - swipeStartY
-    
-    if (deltaY > 0) { // Только свайп вниз
-      setSwipeDeltaY(deltaY)
-    }
-  }
-
-  const handleSwipeEnd = () => {
-    if (swipeDeltaY > 100) { // Если свайп больше 100px
-      setShowDescriptionModal(false)
-    }
-    setSwipeDeltaY(0)
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -268,9 +287,9 @@ export default function ProductPage({ params }: ProductPageProps) {
 
           {/* Mobile Product Gallery - только для мобильных */}
           <div className="lg:hidden">
-            <div className="py-6 px-4">
+            <div className="pb-4 px-4">
               {/* Main Image */}
-              <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg mb-4">
+              <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg mb-3">
                 <img
                   src={productImages[selectedImage]}
                   alt={product.name}
@@ -456,20 +475,20 @@ export default function ProductPage({ params }: ProductPageProps) {
 
         {/* Mobile Product Info - только для мобильных */}
         <div className="lg:hidden">
-          <div className="py-6 px-4 space-y-6">
+          <div className="pt-2 pb-6 px-4 space-y-4">
             {/* Основная информация в плитках */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               {/* Бренд, название, цена и кнопка корзины - все в одной карточке */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
                 <p className="text-primary-600 dark:text-primary-400 font-medium mb-2">
                   {product.brand}
                 </p>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                   {product.name}
                 </h1>
                 
                 {/* Цена */}
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <span className="text-3xl font-bold text-gray-900 dark:text-white">
                     {formatPrice(product.price)}
                   </span>
@@ -480,13 +499,13 @@ export default function ProductPage({ params }: ProductPageProps) {
                   )}
                 </div>
                 {discount > 0 && (
-                  <p className="text-green-600 dark:text-green-400 font-medium mb-4">
+                  <p className="text-green-600 dark:text-green-400 font-medium mb-3">
                     Экономия {formatPrice(product.original_price! - product.price)}
                   </p>
                 )}
 
                 {/* Количество и кнопка корзины */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Quantity Selector */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -537,7 +556,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Описание */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
                 <button
                   onClick={() => setShowDescriptionModal(true)}
                   className="w-full text-left"
@@ -562,16 +581,16 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Бандлы и предложения - прямо под описанием */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
                 <BundleOffer product={product} />
               </div>
 
               {/* Основные возможности */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  Основные возможности
-                </h3>
-                <div className="space-y-3">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                    Основные возможности
+                  </h3>
+                  <div className="space-y-2">
                   {product.features.map((feature, index) => (
                     <div key={index} className="flex items-center space-x-3">
                       <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
@@ -582,11 +601,11 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Информация о доставке */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  Информация о доставке
-                </h3>
-                <div className="space-y-4">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                    Информация о доставке
+                  </h3>
+                  <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
                       <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -737,69 +756,67 @@ export default function ProductPage({ params }: ProductPageProps) {
       </main>
 
       {/* Модальное окно с описанием - только для мобильных */}
+      {/* Модальное окно с описанием товара */}
       <AnimatePresence>
         {showDescriptionModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 lg:hidden"
-            style={{ 
-              // Скрываем нижнее меню при открытом модальном окне
-              '--hide-bottom-nav': 'true'
-            } as React.CSSProperties}
-            onTouchStart={handleSwipeStart}
-            onTouchMove={handleSwipeMove}
-            onTouchEnd={handleSwipeEnd}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setShowDescriptionModal(false)}
           >
-            {/* Блюр на фоне */}
-            <motion.div
-              initial={{ backdropFilter: 'blur(0px)' }}
-              animate={{ backdropFilter: 'blur(10px)' }}
-              exit={{ backdropFilter: 'blur(0px)' }}
-              className="absolute inset-0 bg-black/20"
-              onClick={() => setShowDescriptionModal(false)}
-            />
-            
-            {/* Контент модального окна */}
             <motion.div
               initial={{ y: '100%' }}
-              animate={{ y: swipeDeltaY > 0 ? swipeDeltaY : 0 }}
+              animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl"
-              style={{ 
-                maxHeight: '90vh',
-                touchAction: 'pan-y'
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.1}
+              onDragEnd={(event, info) => {
+                if (info.offset.y > 100) {
+                  setShowDescriptionModal(false)
+                }
               }}
-              onTouchStart={handleSwipeStart}
-              onTouchMove={handleSwipeMove}
-              onTouchEnd={handleSwipeEnd}
+              dragMomentum={false}
             >
-              {/* Индикатор свайпа */}
+              {/* Handle для свайпа */}
               <div className="flex justify-center pt-3 pb-2">
                 <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
               </div>
-              
+
               {/* Заголовок */}
-              <div className="px-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Описание товара
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {product.brand} - {product.name}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Описание товара
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {product.brand} - {product.name}
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => setShowDescriptionModal(false)}
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              
+
               {/* Контент */}
-              <div className="px-6 py-6 overflow-y-auto max-h-[70vh]">
+              <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <div className="space-y-6">
                   {/* Описание */}
                   <div>
@@ -861,6 +878,71 @@ export default function ProductPage({ params }: ProductPageProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Может вам понравится */}
+      <section className="py-8 bg-gray-50 dark:bg-gray-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-6"
+          >
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+              Может вам понравится
+            </h2>
+          </motion.div>
+
+          {/* Сетка товаров */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            {displayedProducts.map((product, index) => (
+              <motion.div
+                key={`${product.id}-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: (index % 20) * 0.05 }}
+              >
+                <ProductCard
+                  product={product}
+                  variant="default"
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Индикатор загрузки */}
+          {isLoadingMore && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center mt-8"
+            >
+              <div className="inline-flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Загружаем еще товары...</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Сообщение о конце списка */}
+          {!hasMoreProducts && displayedProducts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center mt-8"
+            >
+              <p className="text-gray-600 dark:text-gray-400">
+                Вы просмотрели все доступные товары
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </section>
+
+      {/* Отступ для нижнего навбара */}
+      <div className="h-24 md:hidden" />
     </div>
   )
 } 

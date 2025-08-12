@@ -14,17 +14,20 @@ import {
   ShoppingBag,
   Gift,
   Grid,
-  Coins
+  Coins,
+  MessageCircle
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
 import { getAdminStats, getOrdersStats } from '@/lib/supabase'
+import { getAllChats } from '@/lib/supabase/chat'
 
 interface AdminStats {
   products: number
   categories: number
   users: number
   orders: number
+  chats: number
 }
 
 export default function AdminPage() {
@@ -32,7 +35,8 @@ export default function AdminPage() {
     products: 0,
     categories: 0,
     users: 0,
-    orders: 0
+    orders: 0,
+    chats: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -44,11 +48,21 @@ export default function AdminPage() {
           getOrdersStats()
         ])
         
+        // Загружаем статистику чатов
+        const chatList = await getAllChats()
+        const chatStats = {
+          total: chatList.length,
+          open: chatList.filter(chat => chat.status === 'open').length,
+          pending: chatList.filter(chat => chat.status === 'pending').length,
+          closed: chatList.filter(chat => chat.status === 'closed').length
+        }
+        
         setStats({
           products: basicStats.products,
           categories: basicStats.categories,
           users: basicStats.users,
-          orders: ordersStats.data?.total_orders || 0
+          orders: ordersStats.data?.total_orders || 0,
+          chats: chatStats.open + chatStats.pending // Показываем активные чаты
         })
       } catch (error) {
         console.error('Error loading admin stats:', error)
@@ -96,6 +110,15 @@ export default function AdminPage() {
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50 dark:bg-orange-900/20',
       count: stats.users
+    },
+    {
+      title: 'Поддержка',
+      description: 'Управление чатами с пользователями',
+      icon: MessageCircle,
+      href: '/admin/support',
+      color: 'from-pink-500 to-pink-600',
+      bgColor: 'bg-pink-50 dark:bg-pink-900/20',
+      count: stats.chats || 0
     },
     {
       title: 'Заказы',

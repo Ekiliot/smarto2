@@ -4,47 +4,10 @@ import { motion } from 'framer-motion'
 import { Header } from '@/components/Header'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect } from 'react'
 
-declare global {
-  interface Window {
-    Tawk_API?: any
-  }
-}
+
 
 export default function SupportPage() {
-  // Дополнительная проверка для открытия виджета
-  useEffect(() => {
-    // Проверяем и показываем виджет при загрузке страницы
-    const showWidget = () => {
-      if (window.Tawk_API && window.Tawk_API.showWidget) {
-        try {
-          window.Tawk_API.showWidget()
-          console.log('Виджет показан со страницы support')
-        } catch (error) {
-          console.log('Ошибка при показе виджета:', error)
-        }
-      }
-    }
-
-    // Показываем виджет сразу
-    showWidget()
-
-    // Дополнительная проверка через небольшую задержку
-    const timer = setTimeout(() => {
-      showWidget()
-    }, 1000)
-
-    // Еще одна проверка через 2 секунды
-    const timer2 = setTimeout(() => {
-      showWidget()
-    }, 2000)
-
-    return () => {
-      clearTimeout(timer)
-      clearTimeout(timer2)
-    }
-  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
@@ -86,9 +49,15 @@ export default function SupportPage() {
                   Онлайн чат с поддержкой
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Наш специалист ответит на все ваши вопросы в режиме реального времени
+                  Начните диалог с нашей поддержкой прямо сейчас!
                 </p>
               </div>
+              <Link
+                href="/support/chat"
+                className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-medium"
+              >
+                💬 Начать чат
+              </Link>
             </div>
           </motion.div>
 
@@ -150,23 +119,24 @@ export default function SupportPage() {
               Онлайн чат с поддержкой
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              Наш специалист ответит на все ваши вопросы в режиме реального времени. 
-              Просто начните диалог в чате ниже.
+              Начните диалог с нашей поддержкой прямо сейчас! 
+              Мы ответим в течение 5 минут в рабочее время.
             </p>
+            <div className="space-y-4">
+              <Link
+                href="/support/chat"
+                className="inline-flex items-center px-8 py-4 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-base font-medium"
+              >
+                💬 Начать чат с поддержкой
+              </Link>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               ⏰ Время работы: Пн-Пт 9:00-18:00
+              </div>
             </div>
           </motion.div>
         </main>
       </div>
 
-      {/* Контейнер для чата Tawk.to */}
-      <div 
-        id="tawkto-container"
-        className="w-full min-h-screen bg-white dark:bg-gray-900"
-      >
-        {/* Чат Tawk.to будет загружен здесь */}
-      </div>
     </div>
   )
 } 

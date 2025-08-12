@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useAuth } from './AuthProvider'
+import { useSmartPrefetch } from '@/lib/useSmartPrefetch'
 import { 
   WishlistItem, 
   getWishlistItems, 
@@ -30,6 +31,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const [wishlistCount, setWishlistCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const { prefetchOnAddToWishlist } = useSmartPrefetch()
 
   const loadWishlist = async () => {
     if (!user) {
@@ -63,6 +65,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const handleAddToWishlist = async (productId: string) => {
     if (!user) return
+
+    // Prefetch страницу вишлиста при добавлении товара
+    prefetchOnAddToWishlist()
 
     try {
       const { error } = await addToWishlist(user.id, productId)

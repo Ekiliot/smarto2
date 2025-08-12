@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smarto2 - Нет интернета</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .offline-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #6b7280;
+        }
+        
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        p {
+            color: #6b7280;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .retry-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .retry-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .retry-button:active {
+            transform: translateY(0);
+        }
+        
+        .cached-pages {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .cached-pages h3 {
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .cached-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .cached-link {
+            color: #3b82f6;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .cached-link:hover {
+            background: #f3f4f6;
+        }
+        
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>Нет интернета</h1>
+        <p>Похоже, что соединение с интернетом потеряно. Проверьте подключение и попробуйте снова.</p>
+        
+        <button class="retry-button" onclick="window.location.reload()">
+            Попробовать снова
+        </button>
+        
+        <div class="cached-pages">
+            <h3>Доступные страницы в кеше:</h3>
+            <div class="cached-links">
+                <a href="/" class="cached-link">Главная</a>
+                <a href="/products" class="cached-link">Товары</a>
+                <a href="/cart" class="cached-link">Корзина</a>
+                <a href="/wishlist" class="cached-link">Избранное</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Проверяем подключение к интернету
+        function checkConnection() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }
+        
+        // Слушаем изменения состояния подключения
+        window.addEventListener('online', checkConnection);
+        
+        // Периодически проверяем подключение
+        setInterval(checkConnection, 5000);
+        
+        // Показываем время последней попытки
+        let lastTry = Date.now();
+        
+        document.querySelector('.retry-button').addEventListener('click', () => {
+            const now = Date.now();
+            if (now - lastTry < 2000) {
+                alert('Подождите немного перед следующей попыткой');
+                return;
+            }
+            lastTry = now;
+            window.location.reload();
+        });
+    </script>
+</body>
+</html> 

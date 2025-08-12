@@ -8,7 +8,9 @@ import { WishlistProvider } from '@/components/WishlistProvider'
 import { LoyaltyProvider } from '@/components/LoyaltyProvider'
 import { BottomNavigation } from '@/components/BottomNavigation'
 import { MobileHeader } from '@/components/MobileHeader'
-import { TawkToProvider } from '@/components/TawkToProvider'
+
+import { ServiceWorkerProvider } from '@/components/ServiceWorkerProvider'
+import { NavbarVisibilityProvider } from '@/components/NavbarVisibilityProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -49,18 +51,21 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
-          <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <LoyaltyProvider>
-                  <TawkToProvider />
-                  <MobileHeader />
-                  {children}
-                  <BottomNavigation />
-                </LoyaltyProvider>
-              </WishlistProvider>
-            </CartProvider>
-          </AuthProvider>
+          <ServiceWorkerProvider>
+            <NavbarVisibilityProvider>
+              <AuthProvider>
+                <CartProvider>
+                  <WishlistProvider>
+                    <LoyaltyProvider>
+                      <MobileHeader />
+                      {children}
+                      <BottomNavigation />
+                    </LoyaltyProvider>
+                  </WishlistProvider>
+                </CartProvider>
+              </AuthProvider>
+            </NavbarVisibilityProvider>
+          </ServiceWorkerProvider>
         </ThemeProvider>
       </body>
     </html>

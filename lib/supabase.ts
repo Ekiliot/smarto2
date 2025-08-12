@@ -480,15 +480,51 @@ export const getAdminStats = async () => {
 
 // User management functions
 export const getAllUsers = async () => {
+  try {
+    // Сначала пробуем получить через RPC функцию (если она существует)
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_users')
+      if (!rpcError && rpcData) {
+        console.log('Users loaded via RPC function')
+        return { data: rpcData, error: null }
+      }
+    } catch (rpcError) {
+      console.log('RPC function not available, trying direct table access')
+    }
+
+    // Если RPC не работает, получаем напрямую из profiles
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false })
 
-  return { data, error }
+    if (error) {
+      console.error('Error accessing profiles table:', error)
+      return { data: [], error }
+    }
+
+    // Преобразуем данные в нужный формат
+    const formattedUsers = data?.map(user => ({
+      id: user.id,
+      email: user.email || user.email_address || '',
+      first_name: user.first_name || user.firstname || null,
+      last_name: user.last_name || user.lastname || null,
+      is_admin: user.is_admin || user.isAdmin || false,
+      created_at: user.created_at,
+      updated_at: user.updated_at || user.created_at
+    })) || []
+
+    console.log('Users loaded via direct table access:', formattedUsers.length)
+    return { data: formattedUsers, error: null }
+  } catch (error) {
+    console.error('Error in getAllUsers:', error)
+    return { data: [], error: error as any }
+  }
 }
 
 export const updateUserRole = async (userId: string, isAdmin: boolean) => {
+  try {
+    // Обновляем в profiles
   const { data, error } = await supabase
     .from('profiles')
     .update({ is_admin: isAdmin })
@@ -496,16 +532,38 @@ export const updateUserRole = async (userId: string, isAdmin: boolean) => {
     .select()
     .single()
 
-  return { data, error }
+    if (error) {
+      console.error('Error updating user role in profiles:', error)
+      return { data: null, error }
+    }
+
+    console.log('User role updated successfully:', data)
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error in updateUserRole:', error)
+    return { data: null, error: error as any }
+  }
 }
 
 export const deleteUser = async (userId: string) => {
+  try {
+    // Удаляем из profiles
   const { error } = await supabase
     .from('profiles')
     .delete()
     .eq('id', userId)
 
+    if (error) {
+      console.error('Error deleting user from profiles:', error)
   return { error }
+    }
+
+    console.log('User deleted successfully from profiles')
+    return { error: null }
+  } catch (error) {
+    console.error('Error in deleteUser:', error)
+    return { error: error as any }
+  }
 }
 
 // Search functions
@@ -1205,6 +1263,8 @@ export interface DailyCheckin {
   is_super_bonus: boolean
   streak_day: number
   created_at: string
+  // Добавляем альтернативное поле для совместимости с разными версиями API
+  date?: string
 }
 
 export interface CheckinCalendar {

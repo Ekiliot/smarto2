@@ -54,24 +54,23 @@ export default function WalletPage() {
     if (!user) return
 
     try {
-      // Временно загружаем только статус отметки
+      // Загружаем статус отметки
       const statusData = await canCheckinToday(user.id)
       setCheckinStatus(statusData)
       
-      // Календарь временно отключен из-за SQL ошибки
-      // const calendarData = await getCheckinCalendar(user.id, currentDate.getFullYear(), currentDate.getMonth() + 1)
-      // setCalendar(calendarData)
-      
-      // Устанавливаем пустой календарь
+      // Загружаем календарь
+      const calendarData = await getCheckinCalendar(user.id, currentDate.getFullYear(), currentDate.getMonth() + 1)
+      setCalendar(calendarData)
+    } catch (error) {
+      console.error('Error loading checkin data:', error)
+      // В случае ошибки устанавливаем базовый календарь
       setCalendar({
         checkins: [],
-        current_streak: statusData.current_streak,
+        current_streak: checkinStatus?.current_streak || 0,
         longest_streak: 0,
         year: currentDate.getFullYear(),
         month: currentDate.getMonth() + 1
       })
-    } catch (error) {
-      console.error('Error loading checkin data:', error)
     }
   }
 
@@ -95,7 +94,7 @@ export default function WalletPage() {
     }
   }
 
-  const changeMonth = (direction: 'prev' | 'next') => {
+  const changeMonth = async (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate)
     if (direction === 'prev') {
       newDate.setMonth(newDate.getMonth() - 1)
@@ -103,6 +102,16 @@ export default function WalletPage() {
       newDate.setMonth(newDate.getMonth() + 1)
     }
     setCurrentDate(newDate)
+    
+    // Загружаем календарь для нового месяца
+    if (user) {
+      try {
+        const calendarData = await getCheckinCalendar(user.id, newDate.getFullYear(), newDate.getMonth() + 1)
+        setCalendar(calendarData)
+      } catch (error) {
+        console.error('Error loading calendar for month:', error)
+      }
+    }
   }
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -147,9 +156,12 @@ export default function WalletPage() {
       return 10
     }
     
-    // Рассчитываем сколько дней осталось до золотого дня
-    const daysUntilGolden = 10 - (currentStreak % 10)
-    return daysUntilGolden === 10 ? 0 : daysUntilGolden // 0 означает что сегодня золотой день
+    // Рассчитываем сколько дней осталось до следующего золотого дня
+    // Золотой день каждые 10 дней: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100...
+    const nextGoldenDay = Math.ceil((currentStreak + 1) / 10) * 10
+    const daysUntilGolden = nextGoldenDay - currentStreak
+    
+    return daysUntilGolden
   }
 
   const isGoldenDayPredicted = (day: number, currentStreak: number, calendar: CheckinCalendar | null) => {
@@ -173,7 +185,13 @@ export default function WalletPage() {
     }
     
     // Проверяем попадает ли день на золотой
-    return daysFromToday === daysUntilSuper || (daysFromToday - daysUntilSuper) % 10 === 0
+    // Золотой день каждые 10 дней от начала стрейка
+    // Если сегодня стрейк 3 дня, то золотой день будет на 7-й день (через 4 дня)
+    // Если сегодня стрейк 7 дней, то золотой день будет на 10-й день (через 3 дня)
+    const currentStreakAtTargetDate = currentStreak + daysFromToday
+    
+    // Проверяем будет ли этот день золотым (кратным 10)
+    return currentStreakAtTargetDate % 10 === 0
   }
 
   if (!user) {
@@ -299,15 +317,15 @@ export default function WalletPage() {
                   )}
                 </motion.button>
                 
-                {/* Информация о следующем супер-дне */}
+                {/* Информация о следующем золотом дне */}
                 {checkinStatus && !checkinStatus.already_checked && (
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
                       <Star className="h-4 w-4" />
                       <span className="text-sm">
                         {checkinStatus.next_is_super 
-                          ? 'Сегодня супер-день! +5-15 баллов!' 
-                          : `До супер-дня: ${checkinStatus.days_until_super} дней`
+                          ? 'Сегодня золотой день! +5-15 баллов!' 
+                          : `До золотого дня: ${checkinStatus.days_until_super} дней`
                         }
                       </span>
                     </div>
@@ -375,9 +393,16 @@ export default function WalletPage() {
                         const isFuture = dayDate > new Date()
                         
                         // Ищем отметку для этого дня
-                        const checkin = calendar?.checkins.find(checkin => 
-                          new Date(checkin.checkin_date).toDateString() === dayDate.toDateString()
-                        )
+                        const checkin = calendar?.checkins.find(checkin => {
+                          // Проверяем структуру данных - может быть checkin_date или date
+                          const checkinDateStr = checkin.checkin_date || checkin.date
+                          if (!checkinDateStr) return false
+                          
+                          const checkinDate = new Date(checkinDateStr)
+                          return checkinDate.getDate() === day && 
+                                 checkinDate.getMonth() === currentDate.getMonth() &&
+                                 checkinDate.getFullYear() === currentDate.getFullYear()
+                        })
                         
                         // Определяем стиль дня
                         let dayStyle = ''
@@ -389,26 +414,35 @@ export default function WalletPage() {
                           dayStyle = 'text-white font-semibold'
                           bgStyle = 'bg-primary-600'
                         } else if (checkin) {
-                          if (checkin.is_super_bonus) {
-                            // Золотой день (супер-день)
-                            dayStyle = 'text-yellow-800 dark:text-yellow-200 font-bold'
-                            bgStyle = 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-400'
-                            indicator = <Star className="h-3 w-3 text-yellow-700 absolute -top-1 -right-1" />
-                          } else {
-                            // Обычный отмеченный день
-                            dayStyle = 'text-green-800 dark:text-green-200 font-medium'
-                            bgStyle = 'bg-green-200 dark:bg-green-800/50'
-                            indicator = <div className="w-2 h-2 bg-green-600 rounded-full absolute -top-1 -right-1"></div>
-                          }
-                        } else if (isPast) {
-                          // Пропущенный день
+                                                  if (checkin.is_super_bonus) {
+                          // Золотой день (каждые 10 дней)
+                          dayStyle = 'text-yellow-800 dark:text-yellow-200 font-bold'
+                          bgStyle = 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-400'
+                          indicator = <Star className="h-3 w-3 text-yellow-700 absolute -top-1 -right-1" />
+                        } else {
+                          // Обычный отмеченный день
+                          dayStyle = 'text-green-800 dark:text-green-200 font-medium'
+                          bgStyle = 'bg-green-200 dark:bg-green-800/50'
+                          indicator = <div className="w-2 h-2 bg-green-600 rounded-full absolute -top-1 -right-1"></div>
+                        }
+                        } else if (isPast && !checkin) {
+                          // Пропущенный день (только если нет отметки)
                           dayStyle = 'text-red-600 dark:text-red-400'
                           bgStyle = 'bg-red-100 dark:bg-red-900/30'
                           indicator = <div className="w-1.5 h-1.5 bg-red-500 rounded-full absolute -top-1 -right-1"></div>
                         } else if (isFuture) {
-                          // Будущий день
-                          dayStyle = 'text-gray-400 dark:text-gray-600'
-                          bgStyle = ''
+                          // Будущий день - проверяем будет ли он золотым
+                          const willBeGolden = isGoldenDayPredicted(day, checkinStatus?.current_streak || 0, calendar)
+                          if (willBeGolden) {
+                            // Будущий золотой день
+                            dayStyle = 'text-yellow-700 dark:text-yellow-300 font-semibold'
+                            bgStyle = 'bg-yellow-100 dark:bg-yellow-900/30'
+                            indicator = <Star className="h-3 w-3 text-yellow-600 absolute -top-1 -right-1" />
+                          } else {
+                            // Обычный будущий день
+                            dayStyle = 'text-gray-400 dark:text-gray-600'
+                            bgStyle = ''
+                          }
                         }
                         
                         return (
@@ -417,15 +451,15 @@ export default function WalletPage() {
                             className={`relative p-2 text-center text-sm rounded-lg transition-all duration-200 ${bgStyle} ${dayStyle}`}
                             title={
                               isToday ? 'Сегодня' :
-                              checkin ? (checkin.is_super_bonus ? `Золотой день! +${checkin.points_earned} баллов` : `Отмечен! +${checkin.points_earned} баллов`) :
-                              isPast ? 'Пропущен' :
+                              checkin ? (checkin.is_super_bonus ? `Золотой день! +${checkin.points_earned || 0} баллов` : `Отмечен! +${checkin.points_earned || 0} баллов`) :
+                              isPast && !checkin ? 'Пропущен' :
                               'Будущий день'
                             }
                           >
                             <span className="text-xs font-medium">{day}</span>
                             {checkin && (
                               <span className="text-[10px] leading-none mt-0.5 opacity-80 block">
-                                +{checkin.points_earned}
+                                +{checkin.points_earned || 0}
                               </span>
                             )}
                             {indicator}
@@ -447,6 +481,12 @@ export default function WalletPage() {
                           <Star className="h-2 w-2 text-yellow-700" />
                         </div>
                         <span className="text-gray-600 dark:text-gray-400">Золотой день</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-yellow-100 dark:bg-yellow-900/30 rounded flex items-center justify-center">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        </div>
+                        <span className="text-gray-600 dark:text-gray-400">Будущий золотой</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center">
@@ -657,12 +697,24 @@ export default function WalletPage() {
                           
                           {Array.from({ length: getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth() + 1) }, (_, i) => {
                             const day = i + 1
-                            const isChecked = calendar?.checkins.some(checkin => 
-                              new Date(checkin.checkin_date).getDate() === day
-                            )
+                            const isChecked = calendar?.checkins.some(checkin => {
+                              const checkinDateStr = checkin.checkin_date || checkin.date
+                              if (!checkinDateStr) return false
+                              
+                              const checkinDate = new Date(checkinDateStr)
+                              return checkinDate.getDate() === day && 
+                                     checkinDate.getMonth() === currentDate.getMonth() &&
+                                     checkinDate.getFullYear() === currentDate.getFullYear()
+                            })
                             const isToday = day === new Date().getDate() && 
                               currentDate.getMonth() === new Date().getMonth() &&
                               currentDate.getFullYear() === new Date().getFullYear()
+                            
+                            // Проверяем будет ли этот день золотым
+                            const isFuture = day > new Date().getDate() && 
+                              currentDate.getMonth() === new Date().getMonth() &&
+                              currentDate.getFullYear() === new Date().getFullYear()
+                            const willBeGolden = isFuture ? isGoldenDayPredicted(day, checkinStatus?.current_streak || 0, calendar) : false
                             
                             return (
                               <div
@@ -672,10 +724,21 @@ export default function WalletPage() {
                                     ? 'bg-primary-600 text-white font-semibold'
                                     : isChecked
                                       ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                                      : 'text-gray-600 dark:text-gray-400'
+                                      : willBeGolden
+                                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 font-semibold'
+                                        : 'text-gray-600 dark:text-gray-400'
                                 }`}
+                                title={
+                                  isToday ? 'Сегодня' :
+                                  isChecked ? 'Отмечен' :
+                                  willBeGolden ? 'Будущий золотой день!' :
+                                  'Не отмечен'
+                                }
                               >
                                 {day}
+                                {willBeGolden && (
+                                  <div className="w-2 h-2 bg-yellow-500 rounded-full mx-auto mt-1"></div>
+                                )}
                               </div>
                             )
                           })}
@@ -734,15 +797,15 @@ export default function WalletPage() {
                           )}
                         </motion.button>
                         
-                        {/* Информация о следующем супер-дне */}
+                        {/* Информация о следующем золотом дне */}
                         {checkinStatus && !checkinStatus.already_checked && (
                           <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
                               <Star className="h-4 w-4" />
                               <span className="text-sm">
                                 {checkinStatus.next_is_super 
-                                  ? 'Сегодня супер-день! +5-15 баллов!' 
-                                  : `До супер-дня: ${checkinStatus.days_until_super} дней`
+                                  ? 'Сегодня золотой день! +5-15 баллов!' 
+                                  : `До золотого дня: ${checkinStatus.days_until_super} дней`
                                 }
                               </span>
                             </div>
@@ -766,12 +829,24 @@ export default function WalletPage() {
                     <div className="space-y-4">
                       {Array.from({ length: getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth() + 1) }, (_, i) => {
                         const day = i + 1
-                        const checkin = calendar?.checkins.find(checkin => 
-                          new Date(checkin.checkin_date).getDate() === day
-                        )
+                        const checkin = calendar?.checkins.find(checkin => {
+                          const checkinDateStr = checkin.checkin_date || checkin.date
+                          if (!checkinDateStr) return false
+                          
+                          const checkinDate = new Date(checkinDateStr)
+                          return checkinDate.getDate() === day && 
+                                 checkinDate.getMonth() === currentDate.getMonth() &&
+                                 checkinDate.getFullYear() === currentDate.getFullYear()
+                        })
                         const isToday = day === new Date().getDate() && 
                           currentDate.getMonth() === new Date().getMonth() &&
                           currentDate.getFullYear() === new Date().getFullYear()
+                        
+                        // Проверяем будет ли этот день золотым
+                        const isFuture = day > new Date().getDate() && 
+                          currentDate.getMonth() === new Date().getMonth() &&
+                          currentDate.getFullYear() === new Date().getFullYear()
+                        const willBeGolden = isFuture ? isGoldenDayPredicted(day, checkinStatus?.current_streak || 0, calendar) : false
                         
                         return (
                           <div
@@ -779,8 +854,16 @@ export default function WalletPage() {
                             className={`flex items-center justify-between p-3 rounded-lg ${
                               isToday 
                                 ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
-                                : 'bg-gray-50 dark:bg-gray-800'
+                                : willBeGolden
+                                  ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+                                  : 'bg-gray-50 dark:bg-gray-800'
                             }`}
+                            title={
+                              isToday ? 'Сегодня' :
+                              checkin ? `Отмечен! +${checkin.points_earned || 0} баллов` :
+                              willBeGolden ? 'Будущий золотой день!' :
+                              'Не отмечен'
+                            }
                           >
                             <div className="flex items-center space-x-3">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -788,7 +871,9 @@ export default function WalletPage() {
                                   ? 'bg-primary-600 text-white'
                                   : checkin
                                     ? 'bg-green-500 text-white'
-                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
+                                    : willBeGolden
+                                      ? 'bg-yellow-500 text-white'
+                                      : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
                               }`}>
                                 {day}
                               </div>
@@ -798,8 +883,13 @@ export default function WalletPage() {
                                 </div>
                                 {checkin && (
                                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                                    +{checkin.points_earned} баллов
-                                    {checkin.is_super_bonus && ' (супер-день!)'}
+                                    +{checkin.points_earned || 0} баллов
+                                    {checkin.is_super_bonus && ' (золотой день!)'}
+                                  </div>
+                                )}
+                                {willBeGolden && (
+                                  <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+                                    🟡 Будущий золотой день!
                                   </div>
                                 )}
                               </div>
@@ -808,6 +898,11 @@ export default function WalletPage() {
                             {checkin && (
                               <div className="text-green-600 dark:text-green-400">
                                 <CheckCircle className="h-5 w-5" />
+                              </div>
+                            )}
+                            {willBeGolden && (
+                              <div className="text-yellow-600 dark:text-yellow-400">
+                                <Star className="h-5 w-5" />
                               </div>
                             )}
                           </div>

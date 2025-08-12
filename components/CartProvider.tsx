@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { useLoyalty } from './LoyaltyProvider'
+import { useSmartPrefetch } from '@/lib/useSmartPrefetch'
 import { 
   CartItem, 
   getCartItems, 
@@ -39,6 +40,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
+  const { prefetchOnAddToCart } = useSmartPrefetch()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [cartCount, setCartCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -99,6 +101,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       window.location.href = '/login'
       return
     }
+
+    // Prefetch страницу корзины при добавлении товара
+    prefetchOnAddToCart()
 
     try {
       await addToCart(user.id, productId, quantity)

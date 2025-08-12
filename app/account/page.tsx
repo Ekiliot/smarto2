@@ -30,6 +30,7 @@ interface UserProfile {
   email: string
   created_at: string
   image_url?: string
+  is_admin?: boolean
 }
 
 export default function AccountPage() {
@@ -77,7 +78,8 @@ export default function AccountPage() {
             last_name: data.last_name || '',
             email: user.email || '',
             created_at: user.created_at || '',
-            image_url: data.image_url || ''
+            image_url: data.image_url || '',
+            is_admin: data.is_admin || false
           })
           setEditForm({
             first_name: data.first_name || '',
@@ -91,20 +93,16 @@ export default function AccountPage() {
             last_name: '',
             email: user.email || '',
             created_at: user.created_at || '',
-            image_url: ''
+            image_url: '',
+            is_admin: false
           })
         }
 
-        // Загружаем роль пользователя
-        const { data: roleData } = await supabase.auth.getUser()
-        if (roleData?.user) {
-          const { data: userRoleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', roleData.user.id)
-            .single()
-          
-          setUserRole(userRoleData?.role || 'user')
+        // Загружаем роль пользователя из profiles
+        if (data?.is_admin) {
+          setUserRole('admin')
+        } else {
+          setUserRole('user')
         }
       } catch (err) {
         console.error('Profile load error:', err)

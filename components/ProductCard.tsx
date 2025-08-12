@@ -7,6 +7,7 @@ import { useCart } from './CartProvider'
 import { useWishlist } from './WishlistProvider'
 import { useLoyalty } from './LoyaltyProvider'
 import { useAuth } from './AuthProvider'
+import { useSmartPrefetch } from '@/lib/useSmartPrefetch'
 import { useState } from 'react'
 
 interface ProductCardProps {
@@ -28,6 +29,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const { addItemsToCartTask, shareProductTask } = useLoyalty()
   const { user } = useAuth()
+  const { prefetchOnHover, prefetchOnAddToCart, prefetchOnAddToWishlist, prefetchProductPage } = useSmartPrefetch()
   const [addingToCart, setAddingToCart] = useState(false)
   const [wishlistLoading, setWishlistLoading] = useState(false)
   
@@ -42,6 +44,9 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
     e.stopPropagation()
     
     if (!product.in_stock) return
+    
+    // Prefetch страницу корзины при добавлении товара
+    prefetchOnAddToCart()
     
     setAddingToCart(true)
     try {
@@ -66,6 +71,9 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
       window.location.href = '/login'
       return
     }
+    
+    // Prefetch страницу вишлиста при добавлении/удалении товара
+    prefetchOnAddToWishlist()
     
     setWishlistLoading(true)
     try {
@@ -136,7 +144,11 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
           whileTap={{ x: 0 }}
           className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
         >
-          <a href={`/product/${product.id}`} className="block">
+          <a 
+            href={`/product/${product.id}`} 
+            className="block"
+            {...prefetchOnHover(`/product/${product.id}`, { delay: 200 })}
+          >
             <div className="flex">
               {/* Product Image */}
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
@@ -237,6 +249,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
                       whileTap={{ scale: 0.95 }}
                       className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
                       title="Посмотреть детали"
+                      {...prefetchOnHover(`/product/${product.id}`, { delay: 100 })}
                     >
                       <Eye className="h-4 w-4" />
                     </motion.a>
@@ -280,7 +293,11 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
           whileTap={{ y: 0 }}
           className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
         >
-          <a href={`/product/${product.id}`} className="block">
+          <a 
+            href={`/product/${product.id}`} 
+            className="block"
+            {...prefetchOnHover(`/product/${product.id}`, { delay: 200 })}
+          >
             {/* Discount Badge */}
             {discount > 0 && (
               <motion.div
@@ -355,6 +372,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
                     whileTap={{ scale: 0.98 }}
                     className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
                     title="Посмотреть детали"
+                    {...prefetchOnHover(`/product/${product.id}`, { delay: 100 })}
                   >
                     <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                   </motion.a>
@@ -436,6 +454,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
                   whileTap={{ scale: 0.95 }}
                   className="flex-1 flex items-center justify-center py-2.5 px-3 text-gray-600 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
                   title="Посмотреть детали"
+                  {...prefetchOnHover(`/product/${product.id}`, { delay: 100 })}
                 >
                   <Eye className="h-4 w-4" />
                 </motion.a>
