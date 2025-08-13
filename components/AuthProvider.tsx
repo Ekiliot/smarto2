@@ -8,12 +8,14 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   signOut: () => Promise<void>
+  signInWithGoogle: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signOut: async () => {},
+  signInWithGoogle: async () => {},
 })
 
 export const useAuth = () => {
@@ -54,6 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      
+      if (error) {
+        console.error('Error signing in with Google:', error)
+        throw error
+      }
+    } catch (error) {
+      console.error('Error signing in with Google:', error)
+      throw error
+    }
+  }
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
@@ -67,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signOut,
+    signInWithGoogle,
   }
 
   return (
