@@ -64,7 +64,7 @@ export default function WishlistPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
         <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
           <div className="flex flex-col items-center justify-center py-8 sm:py-12">
             <Heart className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" />
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
@@ -91,12 +91,12 @@ export default function WishlistPage() {
       
       {/* Мобильная версия wishlist */}
       <div className="md:hidden">
-        <main className="px-4 py-6 space-y-6">
+        <main className="px-2 py-4 space-y-4">
           {/* Заголовок */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-left"
           >
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Избранное
@@ -115,8 +115,8 @@ export default function WishlistPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg">💖 Ваши избранные товары</h3>
-                <p className="text-pink-100 text-sm">
+                <h3 className="font-semibold text-lg text-left">💖 Ваши избранные товары</h3>
+                <p className="text-pink-100 text-sm text-left">
                   {wishlistItems.length > 0 
                     ? `Добавлено ${wishlistItems.length} товаров` 
                     : 'Добавьте товары в избранное'
@@ -200,89 +200,90 @@ export default function WishlistPage() {
               className="space-y-4"
             >
               {wishlistItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden"
-                >
-                  <div className="p-4">
-                    <div className="flex items-center space-x-4">
-                      {/* Изображение товара */}
-                      <div className="relative w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden flex-shrink-0">
-                        {item.product?.image_url ? (
-                          <img
-                            src={item.product.image_url}
-                            alt={item.product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <span className="text-xs">Нет фото</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Информация о товаре */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-2">
-                          {item.product?.name}
-                        </h3>
-                        {item.product?.brand && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            {item.product.brand}
-                          </p>
-                        )}
-                        <div className="flex items-center space-x-2 mb-3">
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">
-                            {formatPrice(item.product?.price || 0)}
-                          </span>
-                          {item.product?.original_price && item.product.original_price > (item.product?.price || 0) && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                              {formatPrice(item.product.original_price)}
-                            </span>
+                <Link key={item.id} href={`/product/${item.product_id}`}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-200"
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center space-x-4">
+                        {/* Изображение товара */}
+                        <div className="relative w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden flex-shrink-0">
+                          {item.product?.image_url ? (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <span className="text-xs">Нет фото</span>
+                            </div>
                           )}
                         </div>
-                      </div>
 
-                      {/* Действия */}
-                      <div className="flex flex-col space-y-2 flex-shrink-0">
-                        {/* Кнопка добавления в корзину */}
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleAddToCart(item.product_id)}
-                          disabled={actionLoading === `cart-${item.product_id}`}
-                          className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                          title="Добавить в корзину"
-                        >
-                          {actionLoading === `cart-${item.product_id}` ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <ShoppingCart className="h-4 w-4" />
+                        {/* Информация о товаре */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-2">
+                            {item.product?.name}
+                          </h3>
+                          {item.product?.brand && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                              {item.product.brand}
+                            </p>
                           )}
-                        </motion.button>
+                          <div className="flex items-center space-x-2 mb-3">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">
+                              {formatPrice(item.product?.price || 0)}
+                            </span>
+                            {item.product?.original_price && item.product.original_price > (item.product?.price || 0) && (
+                              <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                                {formatPrice(item.product.original_price)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                        {/* Кнопка удаления из избранного */}
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleRemoveFromWishlist(item.product_id)}
-                          disabled={actionLoading === item.product_id}
-                          className="w-10 h-10 bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                          title="Удалить из избранного"
-                        >
-                          {actionLoading === item.product_id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </motion.button>
+                        {/* Действия */}
+                        <div className="flex flex-col space-y-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {/* Кнопка добавления в корзину */}
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleAddToCart(item.product_id)}
+                            disabled={actionLoading === `cart-${item.product_id}`}
+                            className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                            title="Добавить в корзину"
+                          >
+                            {actionLoading === `cart-${item.product_id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShoppingCart className="h-4 w-4" />
+                            )}
+                          </motion.button>
+
+                          {/* Кнопка удаления из избранного */}
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleRemoveFromWishlist(item.product_id)}
+                            disabled={actionLoading === item.product_id}
+                            className="w-10 h-10 bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                            title="Удалить из избранного"
+                          >
+                            {actionLoading === item.product_id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </motion.button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </Link>
               ))}
             </motion.div>
           )}
@@ -370,7 +371,6 @@ export default function WishlistPage() {
               <ProductCard
                 key={item.id}
                 product={item.product!}
-                variant="default"
               />
             ))}
           </div>

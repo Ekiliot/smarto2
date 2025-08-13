@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { ProductCard } from './ProductCard'
+import Link from 'next/link'
 
 interface Product {
   id: string
@@ -120,7 +121,7 @@ export function ProductCarousel({ title, products, itemsPerView = 4 }: ProductCa
       </div>
 
       {/* Carousel */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-2xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -137,10 +138,11 @@ export function ProductCarousel({ title, products, itemsPerView = 4 }: ProductCa
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <ProductCard 
-                  product={product} 
-                  variant="default"
-                />
+                <Link href={`/product/${product.id}`}>
+                  <ProductCard 
+                    product={product} 
+                  />
+                </Link>
               </motion.div>
             ))}
           </motion.div>

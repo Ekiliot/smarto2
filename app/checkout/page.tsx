@@ -14,7 +14,6 @@ import {
   Shield,
   Lock
 } from 'lucide-react'
-import { Header } from '@/components/Header'
 import { useAuth } from '@/components/AuthProvider'
 import { useCart } from '@/components/CartProvider'
 import { useLoyalty } from '@/components/LoyaltyProvider'
@@ -96,7 +95,9 @@ export default function CheckoutPage() {
       }
     } else {
       // Если нет сохраненных выбранных товаров, выбираем все
-      setSelectedItems(new Set(cartItems.map(item => item.id)))
+      if (cartItems.length > 0) {
+        setSelectedItems(new Set(cartItems.map(item => item.id)))
+      }
     }
     
     // Загружаем выбранный способ доставки
@@ -107,10 +108,14 @@ export default function CheckoutPage() {
       // Если нет сохраненного способа, выбираем первый доступный
       setSelectedShippingMethod(activeShippingMethods[0].id)
     }
-  }, [cartItems, activeShippingMethods])
+  }, []) // Убираем зависимости, чтобы useEffect выполнялся только один раз при монтировании
 
   // Группируем товары по парам и отдельные товары
   const { bundlePairs, singleItems } = useMemo(() => {
+    if (cartItems.length === 0 || selectedItems.size === 0) {
+      return { bundlePairs: [], singleItems: [] }
+    }
+
     const processedItems = new Set<string>()
     const pairs: any[] = []
     const singles: any[] = []
@@ -151,7 +156,7 @@ export default function CheckoutPage() {
     })
 
     return { bundlePairs: pairs, singleItems: singles }
-  }, [cartItems, selectedItems, getBundlePair])
+  }, [cartItems, selectedItems])
 
   // Вычисляем правильную сумму с учетом скидок по парам
   const subtotal = useMemo(() => {
@@ -299,7 +304,6 @@ export default function CheckoutPage() {
   if (orderSuccess) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
         <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -341,16 +345,30 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
-      <Header />
       
       {/* Мобильная версия checkout */}
       <div className="md:hidden">
-        <main className="px-4 py-6 space-y-6">
+        <main className="px-2 py-4 space-y-4">
+          {/* Кнопка "Назад к корзине" */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-2"
+          >
+            <Link
+              href="/cart"
+              className="inline-flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Назад к корзине</span>
+            </Link>
+          </motion.div>
+
           {/* Заголовок */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-left"
           >
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Оформление заказа
@@ -369,7 +387,7 @@ export default function CheckoutPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg">🛒 Ваш заказ</h3>
+                <h3 className="font-semibold text-lg">Ваш заказ</h3>
                 <p className="text-blue-100 text-sm">
                   {selectedItems.size} {selectedItems.size === 1 ? 'товар' : selectedItems.size < 5 ? 'товара' : 'товаров'} выбрано
                 </p>
@@ -389,7 +407,7 @@ export default function CheckoutPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              📋 Сводка заказа ({selectedItems.size} товаров)
+              Сводка заказа ({selectedItems.size} товаров)
             </h2>
             
             <div className="space-y-4">
@@ -535,13 +553,13 @@ export default function CheckoutPage() {
                 )}
                 {shipping === 0 && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>🚚 Доставка</span>
+                    <span>Доставка</span>
                     <span>Бесплатно</span>
                   </div>
                 )}
                 {pointsToUse > 0 && (
                   <div className="flex justify-between text-sm text-yellow-600">
-                    <span>⭐ Списание баллов</span>
+                    <span>Списание баллов</span>
                     <span>-{formatPrice(pointsToUse)}</span>
                   </div>
                 )}
@@ -564,7 +582,7 @@ export default function CheckoutPage() {
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
             >
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                🚚 Способ доставки
+                Способ доставки
               </h2>
               
               <div className="space-y-3">
@@ -630,7 +648,7 @@ export default function CheckoutPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              👤 Контактная информация
+              Контактная информация
             </h2>
             
             <div className="space-y-4">
@@ -698,7 +716,7 @@ export default function CheckoutPage() {
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-primary-600" />
-              🚚 Адрес доставки
+              Адрес доставки
             </h2>
             
             <div className="space-y-4">
@@ -766,7 +784,7 @@ export default function CheckoutPage() {
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <CreditCard className="h-5 w-5 mr-2 text-primary-600" />
-              💳 Способ оплаты
+              Способ оплаты
             </h2>
             
             <div className="space-y-4">
@@ -812,7 +830,7 @@ export default function CheckoutPage() {
             >
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <Lock className="h-5 w-5 mr-2 text-primary-600" />
-                🔒 Данные карты
+                Данные карты
               </h2>
               
               <div className="space-y-4">
@@ -884,7 +902,7 @@ export default function CheckoutPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              📝 Дополнительно
+              Дополнительно
             </h2>
             
             <div>
@@ -947,7 +965,7 @@ export default function CheckoutPage() {
 
       {/* Десктопная версия - оставляем как есть */}
       <div className="hidden md:block">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1113,7 +1131,7 @@ export default function CheckoutPage() {
           {activeShippingMethods.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                🚚 Способ доставки
+                Способ доставки
               </h3>
               <div className="space-y-3">
                 {activeShippingMethods.map((method) => (

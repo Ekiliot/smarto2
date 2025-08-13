@@ -34,6 +34,7 @@ export default function CartPage() {
   const [maxPointsAllowed, setMaxPointsAllowed] = useState(0)
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>('')
+  const [selectionAnimation, setSelectionAnimation] = useState<string | null>(null)
   const { 
     cartItems, 
     loading, 
@@ -56,13 +57,27 @@ export default function CartPage() {
 
   // Функция для переключения выбора товара
   const toggleItemSelection = (itemId: string) => {
+    console.log('=== TOGGLE ITEM SELECTION ===')
+    console.log('Item ID:', itemId)
+    console.log('Current selected items:', Array.from(selectedItems))
+    console.log('Cart items:', cartItems.map(item => ({ id: item.id, name: item.product?.name })))
+    console.log('Unselected items:', unselectedItems.map(item => ({ id: item.id, name: item.product?.name })))
+    
+    // Запускаем анимацию
+    setSelectionAnimation(itemId)
+    setTimeout(() => setSelectionAnimation(null), 300)
+    
     const newSelected = new Set(selectedItems)
     if (newSelected.has(itemId)) {
       newSelected.delete(itemId)
+      console.log('✅ Removed item from selection')
     } else {
       newSelected.add(itemId)
+      console.log('✅ Added item to selection')
     }
     setSelectedItems(newSelected)
+    console.log('New selection:', Array.from(newSelected))
+    console.log('=== END TOGGLE ===')
   }
 
   // Функция для проверки, активен ли бандл
@@ -74,6 +89,10 @@ export default function CartPage() {
 
   // Группируем товары по парам и отдельные товары с учетом выбора
   const { bundlePairs, singleItems, unselectedItems } = useMemo(() => {
+    console.log('=== GROUPING ITEMS ===')
+    console.log('Selected items:', Array.from(selectedItems))
+    console.log('Cart items:', cartItems.map(item => ({ id: item.id, name: item.product?.name })))
+    
     const processedItems = new Set<string>()
     const pairs: any[] = []
     const singles: any[] = []
@@ -94,19 +113,24 @@ export default function CartPage() {
             pairs.push(bundlePair)
             processedItems.add(bundlePair.triggerProduct.id)
             processedItems.add(bundlePair.suggestedProduct.id)
+            console.log('📦 Added bundle pair:', bundlePair.triggerProduct.product?.name, '+', bundlePair.suggestedProduct.product?.name)
           } else {
             // Если бандл не активен, добавляем товары как отдельные (выбранные или невыбранные)
             if (selectedItems.has(bundlePair.triggerProduct.id)) {
               singles.push(bundlePair.triggerProduct)
+              console.log('✅ Added trigger to singles:', bundlePair.triggerProduct.product?.name)
             } else {
               unselected.push(bundlePair.triggerProduct)
+              console.log('⏸️ Added trigger to unselected:', bundlePair.triggerProduct.product?.name)
             }
             processedItems.add(bundlePair.triggerProduct.id)
             
             if (selectedItems.has(bundlePair.suggestedProduct.id)) {
               singles.push(bundlePair.suggestedProduct)
+              console.log('✅ Added suggested to singles:', bundlePair.suggestedProduct.product?.name)
             } else {
               unselected.push(bundlePair.suggestedProduct)
+              console.log('⏸️ Added suggested to unselected:', bundlePair.suggestedProduct.product?.name)
             }
             processedItems.add(bundlePair.suggestedProduct.id)
           }
@@ -115,12 +139,20 @@ export default function CartPage() {
         // Обычный товар - добавляем в выбранные или невыбранные
         if (selectedItems.has(item.id)) {
           singles.push(item)
+          console.log('✅ Added regular item to singles:', item.product?.name)
         } else {
           unselected.push(item)
+          console.log('⏸️ Added regular item to unselected:', item.product?.name)
         }
         processedItems.add(item.id)
       }
     })
+
+    console.log('Final groups:')
+    console.log('- Bundle pairs:', pairs.length)
+    console.log('- Single items:', singles.length)
+    console.log('- Unselected items:', unselected.length)
+    console.log('=== END GROUPING ===')
 
     return { bundlePairs: pairs, singleItems: singles, unselectedItems: unselected }
   }, [cartItems, getBundlePair, selectedItems, isBundleActive])
@@ -218,7 +250,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -250,7 +282,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 text-center">
           <Loader2 className="h-8 w-8 text-primary-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Загрузка корзины...</p>
         </div>
@@ -263,7 +295,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -296,7 +328,7 @@ export default function CartPage() {
       
       {/* Мобильная версия корзины */}
       <div className="md:hidden">
-        <main className="px-4 py-6 space-y-6">
+        <main className="px-2 py-4 space-y-4">
           {/* Заголовок */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -320,7 +352,7 @@ export default function CartPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg">🎉 Выгодные предложения!</h3>
+                <h3 className="font-semibold text-lg">Выгодные предложения!</h3>
                 <p className="text-blue-100 text-sm">
                   {selectedItems.size > 0 
                     ? `Выбрано ${selectedItems.size} товаров` 
@@ -344,7 +376,7 @@ export default function CartPage() {
               className="space-y-4"
             >
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                🚚 Способ доставки
+                Способ доставки
               </h2>
               
               <div className="space-y-3">
@@ -413,7 +445,7 @@ export default function CartPage() {
               className="space-y-4"
             >
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                🎁 Выгодные пары
+                Выгодные пары
               </h2>
               
               {bundlePairs.map((pair, index) => (
@@ -443,13 +475,15 @@ export default function CartPage() {
                   {/* Товары в бандле */}
                   <div className="p-4 space-y-3">
                     {/* Триггерный товар */}
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(pair.triggerProduct.id)}
-                        onChange={() => toggleItemSelection(pair.triggerProduct.id)}
-                        className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
-                      />
+                    <div 
+                      onClick={() => toggleItemSelection(pair.triggerProduct.id)}
+                      className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 cursor-pointer cart-item-clickable relative ${
+                        selectedItems.has(pair.triggerProduct.id)
+                          ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 md:bg-gray-50 md:dark:bg-gray-700 md:border-0'
+                          : 'bg-gray-50 dark:bg-gray-700'
+                      } ${selectionAnimation === pair.triggerProduct.id ? 'cart-item-selection-animation' : ''}`}>
+                      
+
                       <img
                         src={pair.triggerProduct.product?.image_url}
                         alt={pair.triggerProduct.product?.name}
@@ -471,10 +505,10 @@ export default function CartPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
+                      <div className="flex items-center space-x-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => updateQuantity(pair.triggerProduct.id, pair.triggerProduct.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -483,7 +517,7 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => updateQuantity(pair.triggerProduct.id, pair.triggerProduct.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -491,13 +525,15 @@ export default function CartPage() {
                     </div>
 
                     {/* Предложенный товар */}
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(pair.suggestedProduct.id)}
-                        onChange={() => toggleItemSelection(pair.suggestedProduct.id)}
-                        className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
-                      />
+                    <div 
+                      onClick={() => toggleItemSelection(pair.suggestedProduct.id)}
+                      className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 cursor-pointer cart-item-clickable relative ${
+                        selectedItems.has(pair.suggestedProduct.id)
+                          ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 md:bg-gray-50 md:dark:bg-gray-700 md:border-0'
+                          : 'bg-gray-50 dark:bg-gray-700'
+                      } ${selectionAnimation === pair.suggestedProduct.id ? 'cart-item-selection-animation' : ''}`}>
+                      
+
                       <img
                         src={pair.suggestedProduct.product?.image_url}
                         alt={pair.suggestedProduct.product?.name}
@@ -519,19 +555,19 @@ export default function CartPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
+                      <div className="flex items-center space-x-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => updateQuantity(pair.suggestedProduct.id, pair.suggestedProduct.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="w-6 text-center font-medium text-sm">
-                          {pair.suggestedProduct.quantity}
+                          {pair.triggerProduct.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(pair.suggestedProduct.id, pair.suggestedProduct.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -561,15 +597,15 @@ export default function CartPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4"
+                  onClick={() => toggleItemSelection(item.id)}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 transition-all duration-200 cursor-pointer cart-item-clickable relative ${
+                    selectedItems.has(item.id)
+                      ? 'border-2 border-green-200 dark:border-green-700 md:border-0'
+                      : ''
+                  } ${selectionAnimation === item.id ? 'cart-item-selection-animation' : ''}`}
                 >
+
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.has(item.id)}
-                      onChange={() => toggleItemSelection(item.id)}
-                      className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    />
                     <img
                       src={item.product?.image_url}
                       alt={item.product?.name}
@@ -588,22 +624,22 @@ export default function CartPage() {
                         </span>
                         {item.product?.original_price && item.product.original_price > item.product.price && (
                           <span className="text-sm text-gray-500 line-through">
-                            {formatPrice(item.product.original_price)}
+                            {formatPrice(item.product?.original_price)}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end space-y-2">
+                    <div className="flex flex-col items-end space-y-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full remove-button"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -612,7 +648,7 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -642,58 +678,55 @@ export default function CartPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 + index * 0.1 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 opacity-60"
+                  onClick={() => toggleItemSelection(item.id)}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 opacity-80 hover:opacity-100 transition-all duration-200 cursor-pointer cart-item-clickable relative ${selectionAnimation === item.id ? 'cart-item-selection-animation' : ''}`}
                 >
+
+                  
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => toggleItemSelection(item.id)}
-                      className="w-5 h-5 text-gray-400 bg-gray-100 border-gray-300 rounded focus:ring-gray-500"
-                    />
                     <img
                       src={item.product?.image_url}
                       alt={item.product?.name}
                       className="w-20 h-20 object-cover rounded-xl"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-500 dark:text-gray-400">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
                         {item.product?.name}
                       </h4>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {item.product?.brand}
                       </p>
                       <div className="flex items-center space-x-2 mt-2">
-                        <span className="text-lg font-bold text-gray-400 dark:text-gray-500">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
                           {formatPrice(item.product?.price)}
                         </span>
                         {item.product?.original_price && item.product.original_price > item.product.price && (
-                          <span className="text-sm text-gray-400 line-through">
-                            {formatPrice(item.product.original_price)}
+                          <span className="text-sm text-gray-500 line-through">
+                            {formatPrice(item.product?.original_price)}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end space-y-2">
+                    <div className="flex flex-col items-end space-y-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full remove-button"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="w-6 text-center font-medium text-sm text-gray-400">
+                        <span className="w-6 text-center font-medium text-sm text-gray-900 dark:text-white">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -713,7 +746,7 @@ export default function CartPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              💰 Итого к оплате
+              Итого к оплате
             </h2>
             
             <div className="space-y-3">
@@ -731,14 +764,14 @@ export default function CartPage() {
               
               {shipping === 0 && (
                 <div className="flex justify-between text-sm text-green-600">
-                  <span>🚚 Доставка</span>
+                  <span>Доставка</span>
                   <span>Бесплатно</span>
                 </div>
               )}
               
               {pointsToUse > 0 && (
                 <div className="flex justify-between text-sm text-yellow-600">
-                  <span>⭐ Списание баллов</span>
+                  <span>Списание баллов</span>
                   <span>-{formatPrice(pointsToUse)}</span>
                 </div>
               )}
@@ -757,7 +790,7 @@ export default function CartPage() {
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      💎 Использовать баллы
+                      Использовать баллы
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       У вас: {loyaltyPoints} баллов
@@ -850,7 +883,7 @@ export default function CartPage() {
 
       {/* Десктопная версия - оставляем как есть */}
       <div className="hidden md:block">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -894,7 +927,7 @@ export default function CartPage() {
                         </div>
                         <div>
                           <h3 className="font-bold text-green-800 dark:text-green-200">
-                            🎉 Поздравляем! Вы собрали выгодную пару!
+                            Поздравляем! Вы собрали выгодную пару!
                           </h3>
                           <p className="text-sm text-green-600 dark:text-green-300">
                             Получаете скидку -{pair.discount}% на оба товара
@@ -1100,7 +1133,7 @@ export default function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors remove-button"
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -1123,72 +1156,60 @@ export default function CartPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 opacity-60"
+                      onClick={() => toggleItemSelection(item.id)}
+                      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 transition-all duration-200 cursor-pointer cart-item-clickable relative opacity-80 hover:opacity-100 ${selectionAnimation === item.id ? 'cart-item-selection-animation' : ''}`}
                     >
-                      <div className="flex items-center space-x-4">
-                        {/* Checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          onChange={() => toggleItemSelection(item.id)}
-                          className="w-5 h-5 text-gray-400 bg-gray-100 border-gray-300 rounded focus:ring-gray-500"
+                      
+                      
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={item.product?.image_url}
+                          alt={item.product?.name}
+                          className="w-20 h-20 object-cover rounded-xl"
                         />
-                        
-                        {/* Product Image */}
-                        <div className="flex-shrink-0">
-                          <img
-                            src={item.product?.image_url}
-                            alt={item.product?.name}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
-                        </div>
-
-                        {/* Product Info */}
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 truncate">
+                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
                             {item.product?.name}
                           </h3>
-                          <p className="text-sm text-gray-400 dark:text-gray-500 truncate">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {item.product?.brand}
                           </p>
                           <div className="flex items-center space-x-2 mt-2">
                             {item.product?.original_price && item.product?.original_price > item.product?.price && (
-                              <span className="text-sm text-gray-400 line-through">
+                              <span className="text-sm text-gray-500 line-through">
                                 {formatPrice(item.product?.original_price)}
                               </span>
                             )}
-                            <span className="text-lg font-bold text-gray-400 dark:text-gray-500">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">
                               {formatPrice(item.product?.price)}
                             </span>
                           </div>
                         </div>
-
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col items-end space-y-2" onClick={(e) => e.stopPropagation()}>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            onClick={() => removeFromCart(item.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full remove-button"
                           >
-                            <Minus className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
-                          <span className="w-12 text-center text-gray-400 dark:text-gray-500 font-medium">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="w-6 text-center font-medium text-sm">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
-
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -1200,7 +1221,7 @@ export default function CartPage() {
             {activeShippingMethods.length > 0 && (
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  🚚 Способ доставки
+                  Способ доставки
                 </h3>
                 <div className="space-y-3">
                   {activeShippingMethods.map((method) => (

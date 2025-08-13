@@ -112,16 +112,16 @@ export default function Home() {
           <div className="py-3 px-4">
             {/* Заголовок "Категории" */}
             <div className="mb-3">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-left">
                 Категории
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-center mt-1">
+              <p className="text-gray-600 dark:text-gray-400 text-left mt-1">
                 Выберите интересующую вас категорию
               </p>
             </div>
             
             <div className="relative">
-              <div className="flex space-x-4 overflow-x-auto pb-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth">
+              <div className="flex space-x-4 overflow-x-auto pb-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth rounded-2xl">
                 {categories.map((category) => (
                   <motion.div
                     key={category.id}
@@ -175,8 +175,8 @@ export default function Home() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">Корзина</h3>
-                    <p className="text-primary-100 text-sm">
+                    <h3 className="text-lg font-semibold text-left">Корзина</h3>
+                    <p className="text-primary-100 text-sm text-left">
                       {cartItems.length > 0 
                         ? `${cartItems.length} товар(ов) в корзине` 
                         : 'Добавьте товары и оформите заказ'
@@ -189,7 +189,7 @@ export default function Home() {
               {/* Мини-картинки товаров из корзины */}
               {cartItems.length > 0 && (
                 <div className="mb-2">
-                  <div className="flex space-x-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth">
+                  <div className="flex space-x-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth rounded-xl">
                     {cartItems.map((cartItem) => (
                       <motion.div
                         key={cartItem.id}
@@ -230,7 +230,7 @@ export default function Home() {
         </div>
         
         {/* Desktop Content - только на десктопе */}
-        <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="hidden md:block max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12">
           {/* New Arrivals */}
           {newArrivals.length > 0 && (
             <ProductCarousel 
@@ -261,7 +261,7 @@ export default function Home() {
         
         {/* Mobile Products Section - только на мобильных */}
         <div className="md:hidden">
-          <div className="py-3 px-4">
+          <div className="py-2 px-2">
             {/* Вкладки */}
             <div className="flex space-x-2 mb-4">
               <button
@@ -299,11 +299,11 @@ export default function Home() {
               {activeTab === 'recommended' && (
                 <div className="grid grid-cols-2 gap-3">
                   {products.slice(0, 6).map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      variant="default"
-                    />
+                    <Link key={product.id} href={`/product/${product.id}`}>
+                      <ProductCard
+                        product={product}
+                      />
+                    </Link>
                   ))}
                 </div>
               )}
@@ -311,7 +311,7 @@ export default function Home() {
               {activeTab === 'sale' && (
                 <div>
                   {/* Заголовок с таймером для распродажи */}
-                  <div className="text-center mb-4">
+                  <div className="text-left mb-4">
                     <motion.div 
                       className="bg-gradient-to-r from-red-500/10 to-red-600/10 dark:from-red-500/20 dark:to-red-600/20 rounded-2xl p-6 shadow-lg border border-red-200/50 dark:border-red-800/30 backdrop-blur-sm"
                       initial={{ opacity: 0, y: 20 }}
@@ -346,15 +346,15 @@ export default function Home() {
                   {onSale.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
                       {onSale.slice(0, 6).map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          variant="default"
-                        />
+                        <Link key={product.id} href={`/product/${product.id}`}>
+                          <ProductCard
+                            product={product}
+                          />
+                        </Link>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div className="text-left py-8 text-gray-500 dark:text-gray-400">
                       <div className="text-4xl mb-2">🎉</div>
                       <p className="text-sm">Сейчас нет товаров со скидкой</p>
                       <p className="text-xs mt-1">Но скоро появятся новые предложения!</p>

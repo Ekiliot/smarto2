@@ -125,6 +125,67 @@
       min-height: 44px;
       min-width: 44px;
     }
+  
+    /* Специальные стили для кнопки вишлиста в карточке товара */
+    .wishlist-button {
+      min-height: 32px !important;
+      min-width: 32px !important;
+      width: 32px !important;
+      height: 32px !important;
+    }
+  
+    /* Специальные стили для маленьких кнопок в карточках */
+    .card-action-button {
+      min-height: 32px !important;
+      min-width: 32px !important;
+    }
+  
+    /* Дополнительные стили для кнопок в карточках товаров */
+    .product-card button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  
+    /* Улучшенные стили для иконок в кнопках карточек */
+    .product-card button svg {
+      display: block;
+    }
+  
+    /* Специальные стили для кнопки вишлиста */
+    .wishlist-button {
+      transition: all 0.2s ease-in-out;
+    }
+  
+    .wishlist-button svg {
+      width: 16px !important;
+      height: 16px !important;
+    }
+  
+    .wishlist-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+  
+    .wishlist-button:active {
+      transform: scale(0.95);
+    }
+  
+    /* Специальные стили для очень маленьких экранов */
+    @media (max-width: 375px) {
+      .wishlist-button {
+        min-height: 28px !important;
+        min-width: 28px !important;
+        width: 28px !important;
+        height: 28px !important;
+      }
+      
+      .card-action-button {
+        min-height: 28px !important;
+        min-width: 28px !important;
+      }
+    }
   }
   
   /* Поддержка безопасных областей для устройств с "челкой" */
@@ -347,4 +408,287 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary-600;
+}
+
+/* Стили для переключателей на мобильных устройствах */
+@media (max-width: 768px) {
+  /* Улучшенные размеры для мобильных переключателей */
+  .toggle-switch-mobile {
+    min-width: 48px;
+    min-height: 28px;
+  }
+  
+  /* Предотвращение искажения формы на мобильных */
+  .toggle-switch-mobile,
+  .toggle-switch-mobile * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  
+  /* Улучшенные touch-события для мобильных */
+  .toggle-switch-mobile {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Оптимизация для устройств с высоким DPI */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .toggle-switch-mobile {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+}
+
+/* Специфичные стили для iOS */
+@supports (-webkit-touch-callout: none) {
+  .toggle-switch-mobile {
+    -webkit-appearance: none;
+    -webkit-border-radius: 9999px;
+    border-radius: 9999px;
+  }
+}
+
+/* Специфичные стили для Android */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .toggle-switch-mobile {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Улучшенные стили для очень маленьких экранов */
+@media (max-width: 375px) {
+  .toggle-switch-mobile {
+    min-width: 44px;
+    min-height: 26px;
+  }
+}
+
+/* Улучшенные стили для планшетов */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .toggle-switch-mobile {
+    min-width: 52px;
+    min-height: 30px;
+  }
+}
+
+/* Дополнительные стили для переключателей на мобильных */
+@media (max-width: 768px) {
+  /* Улучшенные размеры для всех переключателей */
+  button[role="switch"] {
+    min-width: 48px !important;
+    min-height: 28px !important;
+    width: 48px !important;
+    height: 28px !important;
+  }
+  
+  /* Улучшенные размеры для thumb */
+  button[role="switch"] > div {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  /* Предотвращение искажения */
+  button[role="switch"],
+  button[role="switch"] > div {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+  
+  /* Улучшенные touch-события */
+  button[role="switch"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Оптимизация для устройств с высоким DPI */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    button[role="switch"] {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+}
+
+/* Специфичные стили для iOS переключателей */
+@supports (-webkit-touch-callout: none) {
+  button[role="switch"] {
+    -webkit-appearance: none;
+    -webkit-border-radius: 9999px;
+    border-radius: 9999px;
+  }
+  
+  button[role="switch"] > div {
+    -webkit-appearance: none;
+    -webkit-border-radius: 9999px;
+    border-radius: 9999px;
+  }
+}
+
+/* Специфичные стили для Android переключателей */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  button[role="switch"] {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Улучшенные стили для очень маленьких экранов */
+@media (max-width: 375px) {
+  button[role="switch"] {
+    min-width: 44px !important;
+    min-height: 26px !important;
+    width: 44px !important;
+    height: 26px !important;
+  }
+  
+  button[role="switch"] > div {
+    min-width: 18px !important;
+    min-height: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Улучшенные стили для планшетов */
+@media (min-width: 768px) and (max-width: 1024px) {
+  button[role="switch"] {
+    min-width: 52px !important;
+    min-height: 30px !important;
+    width: 52px !important;
+    height: 30px !important;
+  }
+  
+  button[role="switch"] > div {
+    min-width: 22px !important;
+    min-height: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+  }
+} 
+
+/* Стили для обрезания текста */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+} 
+
+/* Специальные стили для кнопок количества в корзине */
+.quantity-button {
+  min-height: 28px !important;
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.quantity-button svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Специальные стили для кнопок удаления в корзине */
+.remove-button {
+  min-height: 32px !important;
+  min-width: 32px !important;
+}
+
+.remove-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Стили для выбранных товаров в корзине */
+.cart-item-selected {
+  border: 2px solid;
+  border-color: rgb(34 197 94); /* green-500 */
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .cart-item-selected {
+  border-color: rgb(34 197 94); /* green-500 */
+}
+
+/* На десктопе убираем border */
+@media (min-width: 768px) {
+  .cart-item-selected {
+    border: none;
+  }
+}
+
+/* Hover эффекты для кликабельных карточек в корзине */
+.cart-item-clickable {
+  transition: all 0.2s ease-in-out;
+}
+
+.cart-item-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .cart-item-clickable:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Активное состояние при нажатии */
+.cart-item-clickable:active {
+  transform: translateY(0);
+  transition: all 0.1s ease-in-out;
+}
+
+/* Анимация выбора товара */
+.cart-item-selection-animation {
+  animation: selectionPulse 0.3s ease-in-out;
+}
+
+@keyframes selectionPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Специальные стили для очень маленьких экранов */
+@media (max-width: 375px) {
+  .wishlist-button {
+    min-height: 28px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .card-action-button {
+    min-height: 28px !important;
+    min-width: 28px !important;
+  }
+  
+  .quantity-button {
+    min-height: 24px !important;
+    min-width: 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  .quantity-button svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
 } 

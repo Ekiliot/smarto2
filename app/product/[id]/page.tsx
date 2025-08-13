@@ -19,7 +19,6 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { ProductCard } from '@/components/ProductCard'
-import { BundleOffer } from '@/components/BundleOffer'
 import { getAllProducts, getAllCategories, Product, Category } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/components/CartProvider'
@@ -209,12 +208,12 @@ export default function ProductPage({ params }: ProductPageProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6 py-2 sm:py-4">
         {/* Breadcrumb */}
         <motion.nav
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-4"
         >
           <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <li><a href="/" className="hover:text-primary-600 transition-colors">Главная</a></li>
@@ -228,7 +227,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         </motion.nav>
 
         {/* Product Details */}
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
+        <div className="grid lg:grid-cols-2 gap-8 mb-8">
           {/* Desktop Product Gallery - только для десктопа */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -291,7 +290,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
           {/* Mobile Product Gallery - только для мобильных */}
           <div className="lg:hidden">
-            <div className="pb-4 px-4">
+            <div className="pb-2 px-1">
               {/* Main Image */}
               <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg mb-3">
                 <img
@@ -434,8 +433,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </motion.button>
               </div>
 
-              {/* Bundle Offers */}
-              <BundleOffer product={product} />
+
             </div>
 
             {/* Features */}
@@ -479,7 +477,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
         {/* Mobile Product Info - только для мобильных */}
         <div className="lg:hidden">
-          <div className="pt-2 pb-6 px-4 space-y-4">
+          <div className="pt-1 pb-4 px-1 space-y-3">
             {/* Основная информация в плитках */}
             <div className="grid grid-cols-1 gap-3">
               {/* Бренд, название, цена и кнопка корзины - все в одной карточке */}
@@ -584,10 +582,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </button>
               </div>
 
-              {/* Бандлы и предложения - прямо под описанием */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
-                <BundleOffer product={product} />
-              </div>
+
 
               {/* Основные возможности */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
@@ -649,7 +644,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12 hidden lg:block"
+          className="mb-8 hidden lg:block"
         >
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex space-x-8">
@@ -673,7 +668,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             </nav>
           </div>
 
-          <div className="py-8">
+          <div className="py-6">
             <AnimatePresence mode="wait">
               {selectedTab === 'description' && (
                 <motion.div
@@ -884,8 +879,8 @@ export default function ProductPage({ params }: ProductPageProps) {
       </AnimatePresence>
 
       {/* Может вам понравится */}
-      <section className="py-8 bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-4 sm:py-6 bg-gray-50 dark:bg-gray-900/50">
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -910,7 +905,6 @@ export default function ProductPage({ params }: ProductPageProps) {
               >
                 <ProductCard
                   product={product}
-                  variant="default"
                 />
               </motion.div>
             ))}

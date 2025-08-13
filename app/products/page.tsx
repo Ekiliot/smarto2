@@ -3,23 +3,22 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Filter, Grid, List, ChevronDown, ShoppingCart, Heart, Eye } from 'lucide-react'
+import { Filter, ShoppingCart, Heart, Eye } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { ProductCard } from '@/components/ProductCard'
 import { getAllProducts, getAllCategories, Product, Category } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 import { useNavbarVisibility } from '@/components/NavbarVisibilityProvider'
+import Link from 'next/link'
 
 export default function ProductsPage() {
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<string>('featured')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000])
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'newest'>('featured')
+  const [priceRange, setPriceRange] = useState([0, 10000])
   const [minPrice, setMinPrice] = useState<number>(0)
   const [maxPrice, setMaxPrice] = useState<number>(15000)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
@@ -133,7 +132,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -257,59 +256,20 @@ export default function ProductsPage() {
             {/* Sort and View Controls */}
             <div className="flex items-center gap-4">
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Сортировка:
                 </span>
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-2 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
-                  >
-                    <option value="featured">Рекомендуемые</option>
-                    <option value="price-low">Цена: по возрастанию</option>
-                    <option value="price-high">Цена: по убыванию</option>
-                    <option value="rating">По рейтингу</option>
-                    <option value="newest">Новинки</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                  Вид:
-                </span>
-                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-all duration-200 ${
-                      viewMode === 'grid'
-                        ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
-                    title="Сетка"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-all duration-200 ${
-                      viewMode === 'list'
-                        ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
-                    title="Список"
-                  >
-                    <List className="h-4 w-4" />
-                  </motion.button>
-                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'featured' | 'price-low' | 'price-high' | 'newest')}
+                  className="appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-2 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
+                >
+                  <option value="featured">Популярные</option>
+                  <option value="price-low">Цена: по возрастанию</option>
+                  <option value="price-high">Цена: по убыванию</option>
+                  <option value="newest">Новые</option>
+                </select>
               </div>
             </div>
           </div>
@@ -328,7 +288,7 @@ export default function ProductsPage() {
         {/* Products Grid/List */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${viewMode}-${selectedCategory}-${sortBy}`}
+            key={`${selectedCategory}-${sortBy}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -336,11 +296,11 @@ export default function ProductsPage() {
             className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
           >
             {filteredAndSortedProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                variant={viewMode === 'list' ? 'horizontal' : 'default'}
-              />
+              <Link key={product.id} href={`/product/${product.id}`}>
+                <ProductCard
+                  product={product}
+                />
+              </Link>
             ))}
           </motion.div>
         </AnimatePresence>
@@ -495,51 +455,14 @@ export default function ProductsPage() {
                   <div className="relative">
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                      onChange={(e) => setSortBy(e.target.value as 'featured' | 'price-low' | 'price-high' | 'newest')}
                       className="w-full appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-3 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
                     >
-                      <option value="featured">Рекомендуемые</option>
+                      <option value="featured">Популярные</option>
                       <option value="price-low">Цена: по возрастанию</option>
                       <option value="price-high">Цена: по убыванию</option>
-                      <option value="rating">По рейтингу</option>
-                      <option value="newest">Новинки</option>
+                      <option value="newest">Новые</option>
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Вид отображения */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Вид отображения
-                  </h3>
-                  <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setViewMode('grid')}
-                      className={`flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
-                        viewMode === 'grid'
-                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      <Grid className="h-4 w-4" />
-                      <span className="text-sm font-medium">Сетка</span>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setViewMode('list')}
-                      className={`flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center space-x-2 ${
-                        viewMode === 'list'
-                          ? 'bg-white dark:bg-gray-600 text-primary-600 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      <List className="h-4 w-4" />
-                      <span className="text-sm font-medium">Список</span>
-                    </motion.button>
                   </div>
                 </div>
 
