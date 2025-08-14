@@ -8,14 +8,16 @@ import {
   Plus, 
   X, 
   Upload,
-  Loader2
+  Loader2,
+  Edit3
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
 import { ImageUpload } from '@/components/ImageUpload'
 import { MultipleImageUpload } from '@/components/MultipleImageUpload'
 import { HTMLEditor } from '@/components/HTMLEditor'
-import { createProduct, getAllCategories, uploadProductImage, updateProduct } from '@/lib/supabase'
+import { getProduct, updateProduct, getAllCategories, uploadProductImage } from '@/lib/supabase'
+import { useParams, useRouter } from 'next/navigation'
 
 interface Category {
   id: string
@@ -27,9 +29,31 @@ interface Specification {
   value: string
 }
 
-export default function NewProductPage() {
+interface Product {
+  id: string
+  name: string
+  description: string
+  price: number
+  purchase_price: number
+  original_price?: number
+  image_url: string
+  images: string[]
+  category_id: string
+  brand: string
+  in_stock: boolean
+  stock_quantity: number
+  features: string[]
+  specifications: Record<string, string>
+}
+
+export default function EditProductPage() {
+  const params = useParams()
+  const router = useRouter()
+  const productId = params.id as string
+  
+  const [product, setProduct] = useState<Product | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   
@@ -56,21 +80,59 @@ export default function NewProductPage() {
     { key: '', value: '' }
   ])
 
-  // Загружаем категории
+  // Загружаем товар и категории
   useEffect(() => {
-    loadCategories()
-  }, [])
+    loadData()
+  }, [productId])
 
-  const loadCategories = async () => {
+  const loadData = async () => {
     try {
-      const { data, error } = await getAllCategories()
-      if (error) {
-        console.error('Error loading categories:', error)
-      } else {
-        setCategories(data || [])
+      setLoading(true)
+      const [productResult, categoriesResult] = await Promise.all([
+        getProduct(productId),
+        getAllCategories()
+      ])
+
+      if (productResult.error) {
+        throw productResult.error
+      }
+
+      if (categoriesResult.error) {
+        console.error('Error loading categories:', categoriesResult.error)
+      }
+
+      const productData = productResult.data
+      if (productData) {
+        setProduct(productData)
+        setFormData({
+          name: productData.name,
+          description: productData.description,
+          price: productData.price.toString(),
+          purchase_price: productData.purchase_price.toString(),
+          original_price: productData.original_price?.toString() || '',
+          image_url: productData.image_url,
+          category_id: productData.category_id,
+          brand: productData.brand,
+          in_stock: productData.in_stock,
+          stock_quantity: productData.stock_quantity.toString()
+        })
+        setImages(productData.images || [])
+        setFeatures(productData.features?.length ? productData.features : [''])
+        
+        if (productData.specifications) {
+          const specs = Object.entries(productData.specifications).map(([key, value]) => ({ key, value }))
+          setSpecifications(specs.length ? specs : [{ key: '', value: '' }])
+        }
+      }
+
+      if (categoriesResult.data) {
+        setCategories(categoriesResult.data)
       }
     } catch (err) {
-      console.error('Error loading categories:', err)
+      console.error('Error loading data:', err)
+      setError('Ошибка при загрузке данных товара')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -120,15 +182,47 @@ export default function NewProductPage() {
       let finalImageUrl = formData.image_url
       let finalImages: string[] = []
 
-      // Сначала создаем товар, чтобы получить ID
-      const tempProductData = {
+      // Загружаем главное изображение если выбран файл
+      if (selectedFile) {
+        setIsUploadingImage(true)
+        const { data: imageUrl, error: uploadError } = await uploadProductImage(selectedFile, productId)
+        
+        if (uploadError) {
+          throw uploadError
+        }
+        finalImageUrl = imageUrl
+      }
+
+      // Загружаем дополнительные изображения
+      if (selectedFiles.length > 0) {
+        setIsUploadingImage(true)
+        const uploadPromises = selectedFiles.map(async (file) => {
+          const { data: imageUrl, error } = await uploadProductImage(file, productId)
+          if (error) throw error
+          return imageUrl
+        })
+
+        try {
+          const uploadedUrls = await Promise.all(uploadPromises)
+          finalImages = uploadedUrls
+        } catch (uploadError) {
+          throw uploadError
+        }
+      }
+
+      // Если есть изображения из URL (не blob), добавляем их
+      const urlImages = images.filter(url => !url.startsWith('blob:'))
+      finalImages = [...finalImages, ...urlImages]
+
+      // Обновляем товар
+      const updateData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
         purchase_price: parseFloat(formData.purchase_price || formData.price),
         original_price: formData.original_price ? parseFloat(formData.original_price) : undefined,
-        image_url: '', // Временно пустое
-        images: [], // Временно пустой массив
+        image_url: finalImageUrl,
+        images: finalImages,
         category_id: formData.category_id,
         brand: formData.brand.trim(),
         in_stock: formData.in_stock,
@@ -140,74 +234,51 @@ export default function NewProductPage() {
         }, {} as Record<string, string>)
       }
 
-      const { data: product, error: createError } = await createProduct(tempProductData)
-      
-      if (createError) {
-        throw createError
-      }
-
-      // Загружаем главное изображение если выбран файл
-      if (selectedFile) {
-        setIsUploadingImage(true)
-        const { data: imageUrl, error: uploadError } = await uploadProductImage(selectedFile, product.id)
-        
-        if (uploadError) {
-          throw uploadError
-        }
-        finalImageUrl = imageUrl
-      }
-
-      // Загружаем дополнительные изображения
-      console.log('Selected files count:', selectedFiles.length)
-      if (selectedFiles.length > 0) {
-        setIsUploadingImage(true)
-        const uploadPromises = selectedFiles.map(async (file) => {
-          console.log('Uploading file:', file.name)
-          const { data: imageUrl, error } = await uploadProductImage(file, product.id)
-          if (error) throw error
-          console.log('Uploaded URL:', imageUrl)
-          return imageUrl
-        })
-
-        try {
-          const uploadedUrls = await Promise.all(uploadPromises)
-          finalImages = uploadedUrls
-          console.log('All uploaded URLs:', finalImages)
-        } catch (uploadError) {
-          throw uploadError
-        }
-      }
-
-      // Если есть изображения из URL (не blob), добавляем их
-      const urlImages = images.filter(url => !url.startsWith('blob:'))
-      finalImages = [...finalImages, ...urlImages]
-      
-      console.log('Final images array:', finalImages)
-
-      // Обновляем товар с финальными URL'ами
-      console.log('Final update data:', {
-        image_url: finalImageUrl,
-        images: finalImages
-      })
-      
-      const { error: updateError } = await updateProduct(product.id, {
-        image_url: finalImageUrl,
-        images: finalImages
-      })
+      const { error: updateError } = await updateProduct(productId, updateData)
 
       if (updateError) {
         throw updateError
       }
 
       // Перенаправляем на список товаров
-      window.location.href = '/admin/products'
+      router.push('/admin/products')
     } catch (err) {
-      console.error('Error creating product:', err)
-      setError('Ошибка при создании товара')
+      console.error('Error updating product:', err)
+      setError('Ошибка при обновлении товара')
     } finally {
       setSaving(false)
       setIsUploadingImage(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <AdminGuard>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Header />
+          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+            </div>
+          </main>
+        </div>
+      </AdminGuard>
+    )
+  }
+
+  if (!product) {
+    return (
+      <AdminGuard>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Header />
+          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-400">Товар не найден</p>
+            </div>
+          </main>
+        </div>
+      </AdminGuard>
+    )
   }
 
   return (
@@ -223,19 +294,19 @@ export default function NewProductPage() {
             className="mb-8"
           >
             <div className="flex items-center space-x-3 mb-2">
-              <motion.a
-                href="/admin/products"
+              <motion.button
+                onClick={() => router.push('/admin/products')}
                 whileHover={{ x: -5 }}
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
-              </motion.a>
+              </motion.button>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Создать новый товар
+                Редактировать товар
               </h1>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Заполните информацию о товаре
+              Измените информацию о товаре
             </p>
           </motion.div>
 
@@ -331,11 +402,9 @@ export default function NewProductPage() {
                     value={images}
                     onChange={setImages}
                     onFileSelect={(files) => {
-                      console.log('Files selected in MultipleImageUpload:', files)
                       setSelectedFiles(prev => [...prev, ...files])
                     }}
                     onFileRemove={(index) => {
-                      console.log('File removed at index:', index)
                       setSelectedFiles(prev => prev.filter((_, i) => i !== index))
                     }}
                     maxImages={5}
@@ -419,8 +488,6 @@ export default function NewProductPage() {
                     </div>
                   </div>
                 </div>
-
-
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -565,14 +632,15 @@ export default function NewProductPage() {
 
             {/* Submit Button */}
             <div className="flex items-center justify-end space-x-4">
-              <motion.a
-                href="/admin/products"
+              <motion.button
+                type="button"
+                onClick={() => router.push('/admin/products')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Отмена
-              </motion.a>
+              </motion.button>
               
               <motion.button
                 type="submit"
@@ -584,12 +652,12 @@ export default function NewProductPage() {
                 {saving ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Создание...</span>
+                    <span>Сохранение...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="h-5 w-5" />
-                    <span>Создать товар</span>
+                    <Edit3 className="h-5 w-5" />
+                    <span>Сохранить изменения</span>
                   </>
                 )}
               </motion.button>
