@@ -35,6 +35,7 @@ export default function CartPage() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>('')
   const [selectionAnimation, setSelectionAnimation] = useState<string | null>(null)
+  const [updatingQuantity, setUpdatingQuantity] = useState<Set<string>>(new Set())
   const { 
     cartItems, 
     loading, 
@@ -54,6 +55,29 @@ export default function CartPage() {
       setSelectedItems(initialSelected)
     }
   }, [cartItems])
+
+  // Функция для обновления количества с анимацией
+  const updateQuantityWithAnimation = async (itemId: string, newQuantity: number) => {
+    // Добавляем товар в список обновляющихся
+    setUpdatingQuantity(prev => {
+      const newSet = new Set(prev)
+      newSet.add(itemId)
+      return newSet
+    })
+    
+    try {
+      await updateQuantity(itemId, newQuantity)
+    } finally {
+      // Убираем товар из списка обновляющихся через небольшую задержку для плавности
+      setTimeout(() => {
+        setUpdatingQuantity(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(itemId)
+          return newSet
+        })
+      }, 300)
+    }
+  }
 
   // Функция для переключения выбора товара
   const toggleItemSelection = (itemId: string) => {
@@ -507,19 +531,35 @@ export default function CartPage() {
                       </div>
                       <div className="flex items-center space-x-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => updateQuantity(pair.triggerProduct.id, pair.triggerProduct.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                          onClick={() => updateQuantityWithAnimation(pair.triggerProduct.id, pair.triggerProduct.quantity - 1)}
+                          disabled={updatingQuantity.has(pair.triggerProduct.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
                         >
-                          <Minus className="h-3 w-3" />
+                          {updatingQuantity.has(pair.triggerProduct.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Minus className="h-3 w-3" />
+                          )}
                         </button>
-                        <span className="w-6 text-center font-medium text-sm">
-                          {pair.triggerProduct.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(pair.triggerProduct.id, pair.triggerProduct.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                        <motion.span 
+                          key={`quantity-${pair.triggerProduct.id}-${pair.triggerProduct.quantity}`}
+                          initial={{ scale: 1.2, opacity: 0.8 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="w-6 text-center font-medium text-sm"
                         >
-                          <Plus className="h-3 w-3" />
+                          {pair.triggerProduct.quantity}
+                        </motion.span>
+                        <button
+                          onClick={() => updateQuantityWithAnimation(pair.triggerProduct.id, pair.triggerProduct.quantity + 1)}
+                          disabled={updatingQuantity.has(pair.triggerProduct.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
+                        >
+                          {updatingQuantity.has(pair.triggerProduct.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -638,19 +678,35 @@ export default function CartPage() {
                       </button>
                       <div className="flex items-center space-x-1">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                          onClick={() => updateQuantityWithAnimation(item.id, item.quantity - 1)}
+                          disabled={updatingQuantity.has(item.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
                         >
-                          <Minus className="h-3 w-3" />
+                          {updatingQuantity.has(item.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Minus className="h-3 w-3" />
+                          )}
                         </button>
-                        <span className="w-6 text-center font-medium text-sm">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                        <motion.span 
+                          key={`quantity-${item.id}-${item.quantity}`}
+                          initial={{ scale: 1.2, opacity: 0.8 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="w-6 text-center font-medium text-sm"
                         >
-                          <Plus className="h-3 w-3" />
+                          {item.quantity}
+                        </motion.span>
+                        <button
+                          onClick={() => updateQuantityWithAnimation(item.id, item.quantity + 1)}
+                          disabled={updatingQuantity.has(item.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
+                        >
+                          {updatingQuantity.has(item.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -716,19 +772,35 @@ export default function CartPage() {
                       </button>
                       <div className="flex items-center space-x-1">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                          onClick={() => updateQuantityWithAnimation(item.id, item.quantity - 1)}
+                          disabled={updatingQuantity.has(item.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
                         >
-                          <Minus className="h-3 w-3" />
+                          {updatingQuantity.has(item.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Minus className="h-3 w-3" />
+                          )}
                         </button>
-                        <span className="w-6 text-center font-medium text-sm text-gray-900 dark:text-white">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
+                        <motion.span 
+                          key={`quantity-${item.id}-${item.quantity}`}
+                          initial={{ scale: 1.2, opacity: 0.8 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="w-6 text-center font-medium text-sm text-gray-900 dark:text-white"
                         >
-                          <Plus className="h-3 w-3" />
+                          {item.quantity}
+                        </motion.span>
+                        <button
+                          onClick={() => updateQuantityWithAnimation(item.id, item.quantity + 1)}
+                          disabled={updatingQuantity.has(item.id)}
+                          className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button disabled:opacity-50"
+                        >
+                          {updatingQuantity.has(item.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
                         </button>
                       </div>
                     </div>

@@ -107,7 +107,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await addToCart(user.id, productId, quantity)
-      await loadCart() // Перезагружаем корзину
+      // Оптимизированная перезагрузка только корзины без полной страницы
+      await loadCart()
     } catch (error) {
       console.error('Error adding to cart:', error)
     }
@@ -116,22 +117,44 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const handleUpdateQuantity = async (cartItemId: string, quantity: number) => {
     if (!user) return
 
+    // Оптимистичное обновление - сразу обновляем UI
+    setCartItems(prevItems => {
+      if (quantity <= 0) {
+        // Если количество 0 или меньше, удаляем товар
+        return prevItems.filter(item => item.id !== cartItemId)
+      } else {
+        // Обновляем количество
+        return prevItems.map(item => 
+          item.id === cartItemId 
+            ? { ...item, quantity } 
+            : item
+        )
+      }
+    })
+
     try {
+      // Синхронизируем с базой данных в фоне
       await updateCartItemQuantity(cartItemId, quantity)
-      await loadCart() // Перезагружаем корзину
     } catch (error) {
       console.error('Error updating cart item:', error)
+      // При ошибке восстанавливаем состояние из базы данных
+      await loadCart()
     }
   }
 
   const handleRemoveFromCart = async (cartItemId: string) => {
     if (!user) return
 
+    // Оптимистичное обновление - сразу удаляем из UI
+    setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId))
+
     try {
+      // Синхронизируем с базой данных в фоне
       await removeFromCart(cartItemId)
-      await loadCart() // Перезагружаем корзину
     } catch (error) {
       console.error('Error removing from cart:', error)
+      // При ошибке восстанавливаем состояние из базы данных
+      await loadCart()
     }
   }
 

@@ -1,0 +1,17 @@
+
+    <svg width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+          <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#9333EA;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="128" height="128" fill="white"/>
+      <text x="50%" y="60%" font-family="Arial,sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="url(#grad)">SMARTO</text>
+      <circle cx="21.333333333333332" cy="21.333333333333332" r="8.533333333333333" fill="url(#grad)" opacity="0.3"/>
+      <circle cx="106.66666666666667" cy="21.333333333333332" r="6.4" fill="url(#grad)" opacity="0.2"/>
+      <circle cx="21.333333333333332" cy="106.66666666666667" r="7.111111111111111" fill="url(#grad)" opacity="0.25"/>
+      <circle cx="106.66666666666667" cy="106.66666666666667" r="8" fill="url(#grad)" opacity="0.2"/>
+    </svg>
+  
