@@ -609,15 +609,13 @@ export default function MediaViewer({
                           old_price: currentProduct.old_price,
                           price: currentProduct.price,
                           hasDiscount,
-                          discount: hasDiscount ? calculateDiscount(currentProduct.old_price, currentProduct.price) : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)
+                          discount: hasDiscount ? calculateDiscount(currentProduct.old_price, currentProduct.price) : null
                         })
-                        return hasDiscount || true // Показываем всегда для тестирования
+                        return hasDiscount // Показываем только если есть реальная скидка
                       })() && (
                         <div className="absolute top-6 left-6 z-20">
                           <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                            -{currentProduct.old_price 
-                              ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                              : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)}%
+                            -{calculateDiscount(currentProduct.old_price, currentProduct.price)}%
                           </div>
                         </div>
                       )}
@@ -739,30 +737,26 @@ export default function MediaViewer({
                       <div className="mb-4">
                         {(() => {
                           const hasDiscount = currentProduct.old_price && currentProduct.old_price > currentProduct.price
-                          const testOldPrice = Math.round(currentProduct.price * 1.2)
                           const actualDiscount = hasDiscount 
                             ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                            : calculateDiscount(testOldPrice, currentProduct.price)
+                            : null
                           
                           console.log('Product discount calculation:', {
                             name: currentProduct.name,
                             price: currentProduct.price,
                             old_price: currentProduct.old_price,
                             hasDiscount,
-                            testOldPrice,
                             actualDiscount
                           })
                           
-                          return hasDiscount || true // Показываем всегда для тестирования
+                          return hasDiscount // Показываем только если есть реальная скидка
                         })() && (
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-white/70 text-sm line-through">
-                              {currentProduct.old_price || Math.round(currentProduct.price * 1.2)} MDL
+                              {currentProduct.old_price} MDL
                             </span>
                             <span className="text-red-400 text-sm font-medium bg-red-900/30 px-2 py-1 rounded">
-                              -{currentProduct.old_price 
-                                ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                                : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)}%
+                              -{calculateDiscount(currentProduct.old_price, currentProduct.price)}%
                             </span>
                           </div>
                         )}
