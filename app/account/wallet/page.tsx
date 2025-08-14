@@ -141,27 +141,22 @@ export default function WalletPage() {
     return reason
   }
 
-  const calculateNextGoldenDay = (currentStreak: number, lastCheckinDate: string | null) => {
-    if (!lastCheckinDate) return null
+  const calculateNextGoldenDay = (currentStreak: number, alreadyChecked: boolean) => {
+    // Если стрейк равен 0, следующий золотой день будет на 10-й день
+    if (currentStreak === 0) return 10
     
-    const lastDate = new Date(lastCheckinDate)
-    const today = new Date()
-    
-    // Если последняя отметка была не вчера, стрейк сбросится
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    
-    if (lastDate.toDateString() !== yesterday.toDateString() && lastDate.toDateString() !== today.toDateString()) {
-      // Стрейк сброшен, следующий золотой день будет на 10-й день от сегодня
-      return 10
+    // Определяем эффективный стрейк на основе того, отмечались ли сегодня
+    let effectiveStreak = currentStreak
+    if (!alreadyChecked) {
+      effectiveStreak += 1 // Если еще не отмечались сегодня, учитываем сегодняшний день
     }
     
-    // Рассчитываем сколько дней осталось до следующего золотого дня
-    // Золотой день каждые 10 дней: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100...
-    const nextGoldenDay = Math.ceil((currentStreak + 1) / 10) * 10
-    const daysUntilGolden = nextGoldenDay - currentStreak
+    // Рассчитываем дни до следующего золотого дня (кратного 10)
+    const nextGoldenStreakDay = Math.ceil(effectiveStreak / 10) * 10
+    const daysUntilGolden = nextGoldenStreakDay - effectiveStreak
     
-    return daysUntilGolden
+    // Если дни до золотого дня равны 0, значит сегодня (или сейчас) золотой день
+    return daysUntilGolden === 0 ? 0 : daysUntilGolden
   }
 
   const isGoldenDayPredicted = (day: number, currentStreak: number, calendar: CheckinCalendar | null) => {
@@ -169,29 +164,40 @@ export default function WalletPage() {
     
     const today = new Date()
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-    const todayInCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), today.getDate())
     
-    // Только для будущих дней в текущем месяце
-    if (targetDate <= todayInCurrentMonth) return false
+    // Проверяем только будущие дни
+    if (targetDate <= today) return false
     
-    const daysFromToday = Math.ceil((targetDate.getTime() - todayInCurrentMonth.getTime()) / (1000 * 60 * 60 * 24))
-    
-    // Используем данные из checkinStatus
-    const daysUntilSuper = checkinStatus.days_until_super
-    
-    // Если следующая отметка будет супер-днем
-    if (checkinStatus.next_is_super && daysFromToday === 1) {
-      return true
+    // Если показываем не текущий месяц, не предсказываем
+    if (currentDate.getMonth() !== today.getMonth() || currentDate.getFullYear() !== today.getFullYear()) {
+      return false
     }
     
-    // Проверяем попадает ли день на золотой
-    // Золотой день каждые 10 дней от начала стрейка
-    // Если сегодня стрейк 3 дня, то золотой день будет на 7-й день (через 4 дня)
-    // Если сегодня стрейк 7 дней, то золотой день будет на 10-й день (через 3 дня)
-    const currentStreakAtTargetDate = currentStreak + daysFromToday
+    const daysFromToday = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     
-    // Проверяем будет ли этот день золотым (кратным 10)
-    return currentStreakAtTargetDate % 10 === 0
+    // Проверяем, есть ли непрерывность стрейка до сегодня
+    const lastCheckinDate = checkinStatus.current_streak > 0 ? 
+      new Date(today.getTime() - 24 * 60 * 60 * 1000) : null // вчерашний день если есть стрейк
+    
+    // Если стрейк прерван, следующий золотой будет через 10 дней
+    if (!lastCheckinDate || checkinStatus.current_streak === 0) {
+      return daysFromToday === 10
+    }
+    
+    // Рассчитываем, каким будет стрейк в целевой день
+    // Учитываем, что если сегодня еще не отмечались, то стрейк продолжается
+    let projectedStreak = checkinStatus.current_streak
+    
+    // Если сегодня еще не отмечались, добавляем 1 за сегодня
+    if (!checkinStatus.already_checked) {
+      projectedStreak += 1
+    }
+    
+    // Добавляем дни до целевой даты
+    projectedStreak += daysFromToday - 1 // -1 потому что daysFromToday включает сегодня
+    
+    // Золотой день каждые 10 дней непрерывного стрейка
+    return projectedStreak % 10 === 0
   }
 
   if (!user) {

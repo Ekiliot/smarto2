@@ -1162,11 +1162,11 @@ export default function CartPage() {
                       
                       
                       <div className="flex items-center space-x-3">
-                        <img
-                          src={item.product?.image_url}
-                          alt={item.product?.name}
+                          <img
+                            src={item.product?.image_url}
+                            alt={item.product?.name}
                           className="w-20 h-20 object-cover rounded-xl"
-                        />
+                          />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 dark:text-white truncate">
                             {item.product?.name}
@@ -1193,22 +1193,22 @@ export default function CartPage() {
                             <Trash2 className="h-4 w-4" />
                           </button>
                           <div className="flex items-center space-x-1">
-                            <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
-                            >
+                          >
                               <Minus className="h-3 w-3" />
-                            </button>
+                          </button>
                             <span className="w-6 text-center font-medium text-sm">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               className="w-7 h-7 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors quantity-button"
-                            >
+                          >
                               <Plus className="h-3 w-3" />
-                            </button>
-                          </div>
+                          </button>
+                        </div>
                         </div>
                       </div>
                     </motion.div>

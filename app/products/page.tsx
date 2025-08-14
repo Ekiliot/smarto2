@@ -260,16 +260,16 @@ export default function ProductsPage() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Сортировка:
                 </span>
-                <select
-                  value={sortBy}
+                  <select
+                    value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'featured' | 'price-low' | 'price-high' | 'newest')}
-                  className="appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-2 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
-                >
+                    className="appearance-none bg-gray-100 dark:bg-gray-700 border-0 rounded-lg px-4 py-2 pr-10 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:outline-none cursor-pointer text-sm font-medium transition-all duration-200"
+                  >
                   <option value="featured">Популярные</option>
-                  <option value="price-low">Цена: по возрастанию</option>
-                  <option value="price-high">Цена: по убыванию</option>
+                    <option value="price-low">Цена: по возрастанию</option>
+                    <option value="price-high">Цена: по убыванию</option>
                   <option value="newest">Новые</option>
-                </select>
+                  </select>
               </div>
             </div>
           </div>
@@ -297,9 +297,9 @@ export default function ProductsPage() {
           >
             {filteredAndSortedProducts.map((product, index) => (
               <Link key={product.id} href={`/product/${product.id}`}>
-                <ProductCard
-                  product={product}
-                />
+              <ProductCard
+                product={product}
+              />
               </Link>
             ))}
           </motion.div>

@@ -8,7 +8,9 @@ import { useAuth } from './AuthProvider'
 import { useCart } from './CartProvider'
 import { useWishlist } from './WishlistProvider'
 import { useLoyalty } from './LoyaltyProvider'
+import { useNavbarVisibility } from './NavbarVisibilityProvider'
 import { SearchDropdown } from './SearchDropdown'
+import { PWAInstallButton } from './PWAInstallButton'
 
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -16,6 +18,7 @@ export function Header() {
   const { cartCount } = useCart()
   const { wishlistCount } = useWishlist()
   const { loyaltyPoints } = useLoyalty()
+  const { isNavbarHidden } = useNavbarVisibility()
   const searchRef = useRef<HTMLDivElement>(null)
 
   // Закрываем dropdown при клике вне его
@@ -29,6 +32,11 @@ export function Header() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Скрываем header если navbar скрыт
+  if (isNavbarHidden) {
+    return null
+  }
 
   return (
     <motion.header 
@@ -117,15 +125,15 @@ export function Header() {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
                 </motion.button>
-                <motion.a
-                  href="/login"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+              <motion.a
+                href="/login"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
                   title="Войти"
-                >
-                  <User className="h-5 w-5" />
-                </motion.a>
+              >
+                <User className="h-5 w-5" />
+              </motion.a>
               </div>
             )}
 
@@ -142,6 +150,9 @@ export function Header() {
                 </span>
               )}
             </motion.a>
+
+            {/* PWA Install Button */}
+            <PWAInstallButton variant="minimal" size="sm" className="hidden md:flex" />
 
             <motion.a
               href="/cart"

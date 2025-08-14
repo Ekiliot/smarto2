@@ -172,6 +172,20 @@
       transform: scale(0.95);
     }
   
+    /* Специальные стили для кнопки загрузки фото профиля */
+    .profile-photo-upload-btn {
+      min-height: 24px !important;
+      min-width: 24px !important;
+      width: 24px !important;
+      height: 24px !important;
+      padding: 2px !important;
+    }
+    
+    .profile-photo-upload-btn svg {
+      width: 12px !important;
+      height: 12px !important;
+    }
+    
     /* Специальные стили для очень маленьких экранов */
     @media (max-width: 375px) {
       .wishlist-button {
@@ -184,6 +198,18 @@
       .card-action-button {
         min-height: 28px !important;
         min-width: 28px !important;
+      }
+      
+      .profile-photo-upload-btn {
+        min-height: 20px !important;
+        min-width: 20px !important;
+        width: 20px !important;
+        height: 20px !important;
+      }
+      
+      .profile-photo-upload-btn svg {
+        width: 10px !important;
+        height: 10px !important;
       }
     }
   }
@@ -259,6 +285,31 @@
     -webkit-tap-highlight-color: transparent;
   }
   
+  /* Мобильные стили для выравнивания в контейнере чата */
+  @media (max-width: 768px) {
+    .chat-input-container {
+      align-items: center !important;
+      min-height: 40px !important;
+    }
+    
+    .chat-input-container .chat-button-mobile {
+      align-self: center !important;
+      height: 40px !important;
+      width: 40px !important;
+    }
+    
+    .chat-input-container .flex-1 {
+      align-items: center !important;
+      min-height: 40px !important;
+    }
+    
+    .chat-input-container textarea {
+      min-height: 40px !important;
+      height: auto !important;
+      align-self: center !important;
+    }
+  }
+  
   /* Улучшенные стили для выравнивания иконок в кнопках */
   .chat-button-mobile svg {
     display: block;
@@ -270,42 +321,121 @@
   .chat-button-mobile.flex {
     min-width: 40px;
     min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
   }
   
   .chat-button-mobile.flex svg {
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
     flex-shrink: 0;
   }
   
   /* Специальные стили для кнопки отправки */
-  .chat-button-mobile.flex[title="Отправить"] {
-    width: 40px;
-    height: 40px;
+  .chat-input-container .chat-button-mobile[title="Отправить"] {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+    padding: 8px !important;
   }
   
-  .chat-button-mobile.flex[title="Отправить"] svg {
-    width: 16px;
-    height: 16px;
+  .chat-input-container .chat-button-mobile[title="Отправить"] svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* Специальные стили для кнопки прикрепления файла */
+  .chat-input-container .chat-button-mobile[title="Прикрепить файл"] {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
   }
   
   /* Выравнивание кнопок по отношению к полю ввода */
   .chat-input-container {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
+    min-height: 40px;
   }
   
   .chat-input-container .chat-button-mobile {
     flex-shrink: 0;
-    align-self: center;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: auto;
+  }
+  
+  .chat-input-container .flex-1 {
+    display: flex;
+    align-items: stretch;
   }
   
   .chat-input-container textarea {
-    align-self: center;
+    align-self: stretch;
+    resize: none;
+    min-height: 40px;
+    max-height: 100px;
+    line-height: 1.4;
+    padding: 8px 12px;
+  }
+  
+  /* Убираем дополнительные отступы у кнопок в контейнере */
+  .chat-input-container .chat-button-mobile {
+    margin: 0 !important;
+    padding: 8px !important;
+  }
+
+  /* Специальные стили для страницы логина на мобильных устройствах */
+  @media (max-width: 768px) {
+    .login-page-mobile {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    
+    .login-card-mobile {
+      border-radius: 24px 24px 0 0;
+      margin-top: auto;
+      margin-bottom: 0;
+      min-height: auto;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    /* Улучшенные стили для touch-элементов на странице логина */
+    .login-page-mobile input[type="email"] {
+      font-size: 16px; /* Предотвращает zoom на iOS */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    
+    .login-page-mobile button {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    /* Безопасные области для устройств с "челкой" */
+    .login-page-mobile .login-content {
+      padding-top: max(2rem, env(safe-area-inset-top) + 1rem);
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+    
+    /* Дополнительные стили для контроля отступов */
+    .login-page-mobile main {
+      padding-top: max(2rem, env(safe-area-inset-top) + 1rem) !important;
+    }
   }
   
   /* Улучшенные стили для мобильных полей ввода */
@@ -313,6 +443,16 @@
     -webkit-appearance: none;
     border-radius: 12px;
     font-size: 16px;
+    line-height: 1.4;
+    vertical-align: middle;
+    box-sizing: border-box;
+  }
+  
+  /* Обеспечиваем правильное выравнивание textarea в контейнере */
+  .chat-input-container .chat-input-field-mobile {
+    margin: 0;
+    vertical-align: top;
+    align-self: center;
   }
   
   /* Улучшенные стили для мобильных изображений */

@@ -139,9 +139,9 @@ export function ProductCarousel({ title, products, itemsPerView = 4 }: ProductCa
                 transition={{ delay: index * 0.1 }}
               >
                 <Link href={`/product/${product.id}`}>
-                  <ProductCard 
-                    product={product} 
-                  />
+                <ProductCard 
+                  product={product} 
+                />
                 </Link>
               </motion.div>
             ))}

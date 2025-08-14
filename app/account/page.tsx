@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { useAuth } from '@/components/AuthProvider'
+import { useNotification } from '@/components/NotificationProvider'
+import { PWAInstallMenuItem } from '@/components/PWAInstallButton'
 import { supabase, updateUserProfile, uploadProfileImage } from '@/lib/supabase'
 
 interface UserProfile {
@@ -35,6 +37,7 @@ interface UserProfile {
 
 export default function AccountPage() {
   const { user, signOut } = useAuth()
+  const { showSuccess, showError, showInfo } = useNotification()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -173,9 +176,15 @@ export default function AccountPage() {
       } : null)
       
       setIsEditing(false)
+      
+      // Показываем уведомление об успешном сохранении
+      showSuccess('Профиль обновлен!', 'Данные профиля успешно сохранены', 'check')
     } catch (err) {
       console.error('Save error:', err)
       setError('Ошибка сохранения профиля')
+      
+      // Показываем уведомление об ошибке
+      showError('Ошибка сохранения', 'Не удалось сохранить изменения профиля')
     } finally {
       setIsSaving(false)
     }
@@ -195,6 +204,9 @@ export default function AccountPage() {
     
     setIsUploadingImage(true)
     setError('')
+    
+    // Показываем уведомление о начале загрузки
+    showInfo('Загрузка фото', 'Загружаем новое фото профиля...', 'auth')
     
     try {
       console.log('Starting image upload for user:', user.id)
@@ -226,9 +238,15 @@ export default function AccountPage() {
       setProfile(prev => prev ? { ...prev, image_url: imageUrl } : null)
       setSelectedProfileImage(null)
       
+      // Показываем уведомление об успешной загрузке
+      showSuccess('Фото обновлено!', 'Новое фото профиля успешно сохранено', 'check')
+      
     } catch (err) {
       console.error('Image upload error:', err)
       setError('Ошибка загрузки изображения')
+      
+      // Показываем уведомление об ошибке
+      showError('Ошибка загрузки', 'Не удалось загрузить фото. Попробуйте еще раз')
     } finally {
       setIsUploadingImage(false)
     }
@@ -272,9 +290,15 @@ export default function AccountPage() {
       } : null)
       
       setIsMobileEditing(false)
+      
+      // Показываем уведомление об успешном сохранении
+      showSuccess('Профиль обновлен!', 'Данные профиля успешно сохранены', 'check')
     } catch (err) {
       console.error('Save error:', err)
       setError('Ошибка сохранения профиля')
+      
+      // Показываем уведомление об ошибке
+      showError('Ошибка сохранения', 'Не удалось сохранить изменения профиля')
     } finally {
       setIsSaving(false)
     }
@@ -369,7 +393,7 @@ export default function AccountPage() {
                   onClick={() => document.getElementById('profile-image-input')?.click()}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center shadow-lg"
+                  className="profile-photo-upload-btn absolute -bottom-1 -right-1 w-6 h-6 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center shadow-lg"
                 >
                   <Camera className="h-3 w-3 text-white" />
                 </motion.button>
@@ -515,8 +539,45 @@ export default function AccountPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-primary-600" />
+                  {/* Фото профиля с возможностью загрузки - десктопная версия */}
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center overflow-hidden">
+                      {profile?.image_url ? (
+                        <img
+                          src={profile.image_url}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-6 w-6 text-primary-600" />
+                      )}
+                    </div>
+                    
+                    {/* Кнопка загрузки фото для десктопа */}
+                    <motion.button
+                      onClick={() => document.getElementById('desktop-profile-image-input')?.click()}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="profile-photo-upload-btn absolute -bottom-1 -right-1 w-5 h-5 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center shadow-lg"
+                      title="Изменить фото профиля"
+                    >
+                      <Camera className="h-2.5 w-2.5 text-white" />
+                    </motion.button>
+                    
+                    {/* Скрытый input для загрузки файла - десктопная версия */}
+                    <input
+                      id="desktop-profile-image-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setSelectedProfileImage(file)
+                          handleProfileImageUpload(file)
+                        }
+                      }}
+                    />
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -550,6 +611,18 @@ export default function AccountPage() {
                   <span className="text-sm text-red-700 dark:text-red-400">
                     {error}
                   </span>
+                </motion.div>
+              )}
+
+              {/* Индикатор загрузки изображения - десктопная версия */}
+              {isUploadingImage && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center justify-center mb-4 py-2 text-sm text-gray-600 dark:text-gray-400"
+                >
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
+                  Загрузка изображения...
                 </motion.div>
               )}
 
@@ -777,6 +850,11 @@ export default function AccountPage() {
                     <span className="font-semibold text-sm">Техподдержка</span>
                   </div>
                 </motion.a>
+              </div>
+
+              {/* PWA Install Button */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <PWAInstallMenuItem />
               </div>
 
               {/* Кнопка выхода */}

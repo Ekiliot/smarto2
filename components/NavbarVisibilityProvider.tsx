@@ -14,10 +14,12 @@ export function NavbarVisibilityProvider({ children }: { children: ReactNode }) 
   const [isNavbarHidden, setIsNavbarHidden] = useState(false)
 
   const hideNavbar = () => {
+    console.log('🔄 Hiding navbar')
     setIsNavbarHidden(true)
   }
 
   const showNavbar = () => {
+    console.log('🔄 Showing navbar')
     setIsNavbarHidden(false)
   }
 

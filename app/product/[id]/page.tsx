@@ -19,7 +19,13 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { ProductCard } from '@/components/ProductCard'
+import ReviewSystem from '@/components/ReviewSystem/ReviewSystem'
+import MobileReviewsBlock from '@/components/ReviewSystem/MobileReviewsBlock'
+import MobileReviewsModal from '@/components/ReviewSystem/MobileReviewsModal'
+import MediaViewer from '@/components/ReviewSystem/MediaViewer'
+import CommentsModal from '@/components/ReviewSystem/CommentsModal'
 import { getAllProducts, getAllCategories, Product, Category } from '@/lib/supabase'
+import { getProductReviews } from '@/lib/supabase/reviews'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/components/CartProvider'
 import { useWishlist } from '@/components/WishlistProvider'
@@ -42,7 +48,17 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { addToCart } = useCart()
   const { wishlistItems, isInWishlist } = useWishlist()
   const [showDescriptionModal, setShowDescriptionModal] = useState(false)
+  const [showReviewsModal, setShowReviewsModal] = useState(false)
+  const [showMediaViewer, setShowMediaViewer] = useState(false)
+  const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [currentReview, setCurrentReview] = useState<any>(null)
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([])
+
+  const openComments = (review: any) => {
+    setCurrentReview(review)
+    setShowCommentsModal(true)
+  }
   const [hasMoreProducts, setHasMoreProducts] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const { hideNavbar, showNavbar } = useNavbarVisibility()
@@ -50,9 +66,10 @@ export default function ProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [productsResult, categoriesResult] = await Promise.all([
+        const [productsResult, categoriesResult, reviewsResult] = await Promise.all([
           getAllProducts(),
-          getAllCategories()
+          getAllCategories(),
+          getProductReviews(params.id)
         ])
         
         if (productsResult.data) {
@@ -62,6 +79,10 @@ export default function ProductPage({ params }: ProductPageProps) {
         if (categoriesResult.data) {
           setCategories(categoriesResult.data)
         }
+
+        if (reviewsResult) {
+          setReviews(reviewsResult)
+        }
       } catch (error) {
         console.error('Error loading data:', error)
       } finally {
@@ -70,11 +91,11 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
 
     loadData()
-  }, [])
+  }, [params.id])
 
-  // Управление навбаром при открытии/закрытии модального окна
+  // Управление навбаром при открытии/закрытии модальных окон
   useEffect(() => {
-    if (showDescriptionModal) {
+    if (showDescriptionModal || showReviewsModal || showMediaViewer || showCommentsModal) {
       hideNavbar()
       // Блокируем скролл body
       document.body.style.overflow = 'hidden'
@@ -83,7 +104,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       // Восстанавливаем скролл body
       document.body.style.overflow = ''
     }
-  }, [showDescriptionModal, hideNavbar, showNavbar])
+  }, [showDescriptionModal, showReviewsModal, showMediaViewer, showCommentsModal, hideNavbar, showNavbar])
 
   // Инициализация отображаемых товаров (исключая текущий)
   useEffect(() => {
@@ -582,6 +603,53 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </button>
               </div>
 
+                            {/* Отзывы */}
+              <MobileReviewsBlock
+                productId={params.id}
+                productName={product.name}
+                onOpenReviews={() => setShowReviewsModal(true)}
+                onOpenMediaViewer={(review) => {
+                  setCurrentReview(review)
+                  setShowMediaViewer(true)
+                }}
+                onOpenComments={openComments}
+              />
+
+              {/* Модальные окна */}
+              <MobileReviewsModal
+                isOpen={showReviewsModal}
+                onClose={() => setShowReviewsModal(false)}
+                productId={params.id}
+                productName={product.name}
+                onOpenMediaViewer={() => setShowMediaViewer(true)}
+                onOpenComments={openComments}
+              />
+
+              <MediaViewer
+                isOpen={showMediaViewer}
+                onClose={() => setShowMediaViewer(false)}
+                media={currentReview?.media?.[0] || {} as any} // Передаем первое медиа текущего отзыва
+                review={currentReview || {}}
+                productName={product.name}
+                allReviews={reviews.filter(r => r.media && r.media.length > 0)} // Только отзывы с медиа
+                currentReviewIndex={reviews.findIndex(r => r.id === currentReview?.id) || 0}
+                onReviewChange={(index) => {
+                  const reviewsWithMedia = reviews.filter(r => r.media && r.media.length > 0)
+                  if (index >= 0 && index < reviewsWithMedia.length) {
+                    setCurrentReview(reviewsWithMedia[index])
+                  }
+                }}
+                onOpenComments={openComments}
+                allProducts={products}
+              />
+
+              <CommentsModal
+                isOpen={showCommentsModal}
+                onClose={() => setShowCommentsModal(false)}
+                review={currentReview || {}}
+                productName={product.name}
+              />
+
 
 
               {/* Основные возможности */}
@@ -730,6 +798,19 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </motion.div>
               )}
 
+              {selectedTab === 'reviews' && (
+                <motion.div
+                  key="reviews"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <ReviewSystem 
+                    productId={params.id} 
+                    productName={product.name} 
+                  />
+                </motion.div>
+              )}
 
             </AnimatePresence>
           </div>

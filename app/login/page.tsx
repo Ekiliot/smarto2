@@ -83,36 +83,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area login-page-mobile">
+      {/* Header только для десктопа */}
+      <div className="hidden md:block">
+        <Header />
+      </div>
       
-      <main className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 md:py-12 min-h-screen md:min-h-0 flex flex-col justify-start md:justify-center login-content">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8"
+          className="bg-white dark:bg-gray-800 rounded-xl md:rounded-xl rounded-t-3xl md:rounded-t-xl shadow-lg p-6 md:p-8 mx-auto w-full"
         >
-          {/* Back Button */}
+          {/* Back Button - только для мобильных */}
           <motion.a
             href="/"
             whileHover={{ x: -5 }}
-            className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
+            whileTap={{ scale: 0.95 }}
+            className="md:hidden inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors p-2 -ml-2 rounded-lg"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span className="text-base font-medium">Назад</span>
+          </motion.a>
+
+          {/* Back Button - для десктопа */}
+          <motion.a
+            href="/"
+            whileHover={{ x: -5 }}
+            className="hidden md:inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Назад на главную
           </motion.a>
 
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="h-8 w-8 text-primary-600" />
+          <div className="text-center mb-6 md:mb-8">
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+              <Mail className="h-7 w-7 md:h-8 md:w-8 text-primary-600" />
             </div>
             
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Войти в аккаунт
             </h1>
             
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
               Войдите через Google или получите ссылку на email
             </p>
           </div>
@@ -123,7 +137,7 @@ export default function LoginPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             disabled={isGoogleLoading}
-            className="w-full bg-white hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 dark:border-gray-600 transition-all duration-200 flex items-center justify-center space-x-2 mb-6"
+            className="w-full bg-white hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3.5 md:py-3 px-6 rounded-xl md:rounded-lg border-2 border-gray-300 dark:border-gray-600 transition-all duration-200 flex items-center justify-center space-x-2 mb-4 md:mb-6 text-base shadow-sm active:shadow-none"
           >
             {isGoogleLoading ? (
               <>
@@ -144,14 +158,14 @@ export default function LoginPage() {
           </motion.button>
 
           {/* Divider */}
-          <div className="flex items-center mb-6">
+          <div className="flex items-center mb-4 md:mb-6">
             <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             <span className="px-4 text-sm text-gray-500 dark:text-gray-400">или</span>
             <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
           </div>
 
           {!isSuccess ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* Email Input */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -164,7 +178,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+                  className="w-full px-4 py-3.5 md:py-3 border border-gray-300 dark:border-gray-600 rounded-xl md:rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors text-base"
                 />
               </div>
 
@@ -173,7 +187,7 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                  className="bg-gray-50 dark:bg-gray-700 rounded-xl md:rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -188,7 +202,7 @@ export default function LoginPage() {
                       href={getEmailProviderUrl(emailDomain)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
+                      className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
                     >
                       Открыть почту
                     </a>
@@ -216,7 +230,7 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading || !email}
-                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-semibold py-3.5 md:py-3 px-6 rounded-xl md:rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-base shadow-lg active:shadow-md"
               >
                 {isLoading ? (
                   <>
@@ -238,35 +252,35 @@ export default function LoginPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center"
             >
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <CheckCircle className="h-7 w-7 md:h-8 md:w-8 text-green-600" />
               </div>
               
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Ссылка отправлена!
               </h2>
               
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4 md:mb-6">
                 Проверьте вашу почту и перейдите по ссылке для входа в аккаунт
               </p>
 
               {emailDomain && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mb-6"
-                >
-                  <a
-                    href={getEmailProviderUrl(emailDomain)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mb-4 md:mb-6"
                   >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Открыть {emailDomain}
-                  </a>
-                </motion.div>
+                    <a
+                      href={getEmailProviderUrl(emailDomain)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl md:rounded-lg transition-colors text-base font-medium shadow-sm"
+                    >
+                      <Mail className="h-5 w-5 mr-2" />
+                      Открыть {emailDomain}
+                    </a>
+                  </motion.div>
               )}
 
               <motion.button
@@ -276,7 +290,7 @@ export default function LoginPage() {
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                className="text-primary-600 hover:text-primary-700 font-medium transition-colors text-base px-4 py-2 rounded-lg"
               >
                 Отправить еще раз
               </motion.button>
@@ -284,16 +298,16 @@ export default function LoginPage() {
           )}
 
           {/* Info */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-2">
                 Как это работает?
               </p>
-              <div className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="space-y-1.5 md:space-y-2 text-xs md:text-xs text-gray-500 dark:text-gray-400">
                 <p>1. Введите ваш email адрес</p>
                 <p>2. Получите ссылку для входа на почту</p>
                 <p>3. Перейдите по ссылке для авторизации</p>
-                <p>4. Если вы новый пользователь, заполните профиль</p>
+                <p className="hidden md:block">4. Если вы новый пользователь, заполните профиль</p>
               </div>
             </div>
           </div>

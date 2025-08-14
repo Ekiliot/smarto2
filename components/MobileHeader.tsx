@@ -7,6 +7,7 @@ import { useAuth } from './AuthProvider'
 import { useCart } from './CartProvider'
 import { useWishlist } from './WishlistProvider'
 import { useLoyalty } from './LoyaltyProvider'
+import { useNavbarVisibility } from './NavbarVisibilityProvider'
 import { SearchDropdown } from './SearchDropdown'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -18,6 +19,7 @@ export function MobileHeader() {
   const { cartCount } = useCart()
   const { wishlistItems, isInWishlist, addToWishlist, removeFromWishlist } = useWishlist()
   const { loyaltyPoints } = useLoyalty()
+  const { isNavbarHidden } = useNavbarVisibility()
   const searchRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -97,7 +99,7 @@ export function MobileHeader() {
 
   return (
     <AnimatePresence>
-      {isVisible && !isAccountPage && (
+      {isVisible && !isAccountPage && !isNavbarHidden && (
         <motion.header 
           initial={{ y: -100 }}
           animate={{ y: 0 }}

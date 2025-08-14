@@ -300,9 +300,9 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3">
                   {products.slice(0, 6).map((product) => (
                     <Link key={product.id} href={`/product/${product.id}`}>
-                      <ProductCard
-                        product={product}
-                      />
+                    <ProductCard
+                      product={product}
+                    />
                     </Link>
                   ))}
                 </div>
@@ -347,9 +347,9 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-3">
                       {onSale.slice(0, 6).map((product) => (
                         <Link key={product.id} href={`/product/${product.id}`}>
-                          <ProductCard
-                            product={product}
-                          />
+                        <ProductCard
+                          product={product}
+                        />
                         </Link>
                       ))}
                     </div>

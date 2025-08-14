@@ -96,7 +96,7 @@ export default function CheckoutPage() {
     } else {
       // Если нет сохраненных выбранных товаров, выбираем все
       if (cartItems.length > 0) {
-        setSelectedItems(new Set(cartItems.map(item => item.id)))
+      setSelectedItems(new Set(cartItems.map(item => item.id)))
       }
     }
     

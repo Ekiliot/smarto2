@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon, Monitor, Smartphone, Download, Check } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
+import { usePWAInstall } from '@/components/PWAInstallProvider'
 import ToggleSwitchTailwind from '@/components/ToggleSwitchTailwind'
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
+  const { canInstall, isInstalled, installApp, showInstallPrompt } = usePWAInstall()
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme)
@@ -69,6 +71,94 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
               Выберите предпочитаемую тему оформления. Системная тема автоматически подстраивается под настройки вашего устройства.
             </p>
+          </motion.div>
+
+          {/* PWA Settings */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Приложение
+            </h2>
+            
+            <div className="space-y-4">
+              {isInstalled ? (
+                /* Если уже установлено */
+                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-green-900 dark:text-green-100">
+                        Приложение установлено
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Вы используете Smarto как приложение
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : canInstall ? (
+                /* Если можно установить */
+                <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+                      <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">
+                        Установить приложение
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Быстрый доступ с экрана устройства
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={showInstallPrompt}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Установить</span>
+                  </motion.button>
+                </div>
+              ) : (
+                /* Если нельзя установить */
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                      <Smartphone className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        Установка недоступна
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Ваш браузер не поддерживает установку
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Преимущества приложения:
+              </h3>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <li>• Быстрый запуск с экрана устройства</li>
+                <li>• Работает без интернета (офлайн режим)</li>
+                <li>• Нативный интерфейс и плавная работа</li>
+                <li>• Автоматические обновления</li>
+              </ul>
+            </div>
           </motion.div>
         </div>
       </main>

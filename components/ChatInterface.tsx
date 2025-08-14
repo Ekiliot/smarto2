@@ -359,11 +359,13 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
           ? 'fixed bottom-0 left-0 right-0 z-40 p-3 safe-area-bottom chat-input-mobile' 
           : 'p-4 bg-white dark:bg-gray-800'
       }`}>
-        <div className="flex items-center space-x-2">
+        <div className={`${isMobile ? 'chat-input-container' : 'flex items-center space-x-2'}`}>
           {/* Кнопка прикрепления файла */}
           <button
             onClick={() => setShowFileInput(!showFileInput)}
-            className="flex-shrink-0 p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors chat-button-mobile flex items-center justify-center"
+            className={`flex-shrink-0 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors chat-button-mobile flex items-center justify-center ${
+              isMobile ? '' : 'p-2'
+            }`}
             title="Прикрепить файл"
           >
             <Paperclip className="h-5 w-5" />
@@ -377,11 +379,14 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Напишите сообщение..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white chat-input-field-mobile"
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white chat-input-field-mobile ${
+                isMobile ? 'px-3 py-2' : 'px-3 py-2'
+              }`}
               rows={1}
               style={{
                 minHeight: '40px',
-                maxHeight: '100px'
+                maxHeight: '100px',
+                lineHeight: '1.4'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement
@@ -395,7 +400,9 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
           <button
             onClick={handleSendMessage}
             disabled={!messageText.trim() || sending}
-            className="flex-shrink-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors chat-button-mobile flex items-center justify-center"
+            className={`flex-shrink-0 bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors chat-button-mobile flex items-center justify-center ${
+              isMobile ? 'rounded-full' : 'p-2 rounded-full'
+            }`}
             title="Отправить"
           >
             {sending ? (
