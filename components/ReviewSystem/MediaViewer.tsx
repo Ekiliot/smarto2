@@ -609,7 +609,7 @@ export default function MediaViewer({
                           old_price: currentProduct.old_price,
                           price: currentProduct.price,
                           hasDiscount,
-                          discount: hasDiscount ? calculateDiscount(currentProduct.old_price, currentProduct.price) : 17
+                          discount: hasDiscount ? calculateDiscount(currentProduct.old_price, currentProduct.price) : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)
                         })
                         return hasDiscount || true // Показываем всегда для тестирования
                       })() && (
@@ -617,7 +617,7 @@ export default function MediaViewer({
                           <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                             -{currentProduct.old_price 
                               ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                              : 17}%
+                              : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)}%
                           </div>
                         </div>
                       )}
@@ -738,18 +738,20 @@ export default function MediaViewer({
                       {/* Цены и скидка */}
                       <div className="mb-4">
                         {(() => {
-                          console.log('Product prices:', {
+                          const hasDiscount = currentProduct.old_price && currentProduct.old_price > currentProduct.price
+                          const testOldPrice = Math.round(currentProduct.price * 1.2)
+                          const actualDiscount = hasDiscount 
+                            ? calculateDiscount(currentProduct.old_price, currentProduct.price)
+                            : calculateDiscount(testOldPrice, currentProduct.price)
+                          
+                          console.log('Product discount calculation:', {
                             name: currentProduct.name,
                             price: currentProduct.price,
                             old_price: currentProduct.old_price,
-                            hasOldPrice: currentProduct.old_price != null,
-                            oldPriceGreater: currentProduct.old_price > currentProduct.price
+                            hasDiscount,
+                            testOldPrice,
+                            actualDiscount
                           })
-                          
-                          // Если есть старая цена и она больше новой - показываем скидку
-                          const hasDiscount = currentProduct.old_price && currentProduct.old_price > currentProduct.price
-                          // Для тестирования: если нет скидки, создаем тестовую старую цену
-                          const testOldPrice = !hasDiscount ? Math.round(currentProduct.price * 1.2) : currentProduct.old_price
                           
                           return hasDiscount || true // Показываем всегда для тестирования
                         })() && (
@@ -760,7 +762,7 @@ export default function MediaViewer({
                             <span className="text-red-400 text-sm font-medium bg-red-900/30 px-2 py-1 rounded">
                               -{currentProduct.old_price 
                                 ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                                : 17}%
+                                : calculateDiscount(Math.round(currentProduct.price * 1.2), currentProduct.price)}%
                             </span>
                           </div>
                         )}

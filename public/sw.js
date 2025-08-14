@@ -1,5 +1,5 @@
 // Версия и имена кешей
-const CACHE_VERSION = '2.0.0'
+const CACHE_VERSION = '2.0.1'
 const CACHE_PREFIX = 'smarto2'
 const CACHES = {
   STATIC: `${CACHE_PREFIX}-static-v${CACHE_VERSION}`,
@@ -101,8 +101,8 @@ self.addEventListener('fetch', (event) => {
   // Пропускаем не-GET запросы
   if (request.method !== 'GET') return
   
-  // Пропускаем запросы к внешним ресурсам (кроме изображений)
-  if (url.origin !== self.location.origin && !URL_PATTERNS.IMAGES.test(url.pathname)) {
+  // Пропускаем запросы к внешним ресурсам (включая Supabase изображения)
+  if (url.origin !== self.location.origin) {
     return
   }
   

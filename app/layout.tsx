@@ -12,8 +12,8 @@ import { NotificationProvider } from '@/components/NotificationProvider'
 
 import { ServiceWorkerProvider } from '@/components/ServiceWorkerProvider'
 import { PWAInstallProvider } from '@/components/PWAInstallProvider'
-import { PWAPeriodicNotifications } from '@/components/PWAPeriodicNotifications'
-import { PWATestButton } from '@/components/PWATestButton'
+
+
 import { NavbarVisibilityProvider } from '@/components/NavbarVisibilityProvider'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -94,8 +94,8 @@ export default function RootLayout({
                   <CartProvider>
                     <WishlistProvider>
                       <LoyaltyProvider>
-                        <PWAPeriodicNotifications intervalDays={2} maxShows={5} />
-                        <PWATestButton />
+        
+                        
                         <MobileHeader />
                         {children}
                         <BottomNavigation />
