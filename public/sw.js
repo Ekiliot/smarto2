@@ -1,5 +1,5 @@
 // Версия и имена кешей
-const CACHE_VERSION = '2.0.1'
+const CACHE_VERSION = '1.0.0'
 const CACHE_PREFIX = 'smarto2'
 const CACHES = {
   STATIC: `${CACHE_PREFIX}-static-v${CACHE_VERSION}`,

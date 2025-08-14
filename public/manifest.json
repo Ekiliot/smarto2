@@ -1,7 +1,8 @@
 {
-  "name": "Smarto - Smart Home Store",
+  "name": "Smarto - Магазин умных устройств",
   "short_name": "Smarto",
-  "description": "Leading smart home and electronics store in Moldova. Discover the latest smart devices, gadgets, and technology for your home.",
+  "version": "1.0.0",
+  "description": "Ведущий магазин умного дома и электроники в Молдове. Откройте для себя новейшие умные устройства, гаджеты и технологии для вашего дома.",
   "theme_color": "#3B82F6",
   "background_color": "#ffffff",
   "display": "standalone",
@@ -62,29 +63,7 @@
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-1.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Главная страница Smarto"
-    },
-    {
-      "src": "/screenshots/mobile-2.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Каталог товаров"
-    },
-    {
-      "src": "/screenshots/desktop-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Smarto на рабочем столе"
-    }
-  ],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Каталог",

@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   description: 'Leading smart home and electronics store in Moldova. Discover the latest smart devices, gadgets, and technology for your home.',
   keywords: 'smart home, electronics, gadgets, Moldova, smart devices, automation',
   authors: [{ name: 'Smarto Team' }],
+  applicationName: 'Smarto v1.1.0',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
