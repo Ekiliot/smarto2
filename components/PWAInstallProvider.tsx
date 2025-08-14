@@ -66,12 +66,18 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       setDeferredPrompt(promptEvent)
       setCanInstall(true)
       
-      // Показываем промпт через некоторое время
-      setTimeout(() => {
-        if (!isInstalled) {
-          setShowPrompt(true)
-        }
-      }, 5000) // Показываем через 5 секунд
+      // На ПК не показываем автоматический промпт вообще
+      const userAgent = window.navigator.userAgent.toLowerCase()
+      const isMobile = /iphone|ipad|ipod|android/.test(userAgent)
+      
+      if (isMobile) {
+        // Показываем промпт через некоторое время только на мобильных
+        setTimeout(() => {
+          if (!isInstalled) {
+            setShowPrompt(true)
+          }
+        }, 250000000) // Показываем через 30 секунд (было 5)
+      }
     }
 
     // Слушаем событие установки

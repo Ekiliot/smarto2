@@ -283,45 +283,23 @@ export default function MobileReviewsModal({
           const reaction = await getUserReaction(review.id)
           reactions[review.id] = reaction
           
-          // Исправляем отрицательные счетчики
-          const likes = review.total_likes ?? 0
-          const dislikes = review.total_dislikes ?? 0
-          
-          if (likes < 0 || dislikes < 0) {
-            console.warn(`Отрицательные счетчики для отзыва ${review.id}:`, { likes, dislikes })
-          }
-          
-          // Исправляем счетчики с учетом реакции пользователя
-          let correctedLikes = Math.max(0, likes)
-          let correctedDislikes = Math.max(0, dislikes)
-          
-          // Если у пользователя есть реакция, но счетчик 0, устанавливаем минимум 1
-          if (reaction === 'like' && correctedLikes === 0) {
-            correctedLikes = 1
-          }
-          if (reaction === 'dislike' && correctedDislikes === 0) {
-            correctedDislikes = 1
-          }
-          
           counts[review.id] = {
-            likes: correctedLikes,
-            dislikes: correctedDislikes
+            likes: review.total_likes || 0,
+            dislikes: review.total_dislikes || 0
           }
           
           console.log(`Отзыв ${review.id}:`, {
             reaction,
             total_likes: review.total_likes,
             total_dislikes: review.total_dislikes,
-            correctedLikes,
-            correctedDislikes,
             calculatedCounts: counts[review.id]
           })
         } catch (error) {
           console.warn(`Не удалось загрузить реакцию для отзыва ${review.id}:`, error)
           reactions[review.id] = null
           counts[review.id] = {
-            likes: Math.max(0, review.total_likes || 0),
-            dislikes: Math.max(0, review.total_dislikes || 0)
+            likes: review.total_likes || 0,
+            dislikes: review.total_dislikes || 0
           }
         }
       }
@@ -340,8 +318,8 @@ export default function MobileReviewsModal({
       for (const review of reviews) {
         emptyReactions[review.id] = null
         emptyCounts[review.id] = {
-          likes: Math.max(0, review.total_likes || 0),
-          dislikes: Math.max(0, review.total_dislikes || 0)
+          likes: review.total_likes || 0,
+          dislikes: review.total_dislikes || 0
         }
       }
       
@@ -370,45 +348,23 @@ export default function MobileReviewsModal({
           const reaction = await getUserReaction(review.id)
           reactions[review.id] = reaction
           
-          // Исправляем отрицательные счетчики
-          const likes = review.total_likes ?? 0
-          const dislikes = review.total_dislikes ?? 0
-          
-          if (likes < 0 || dislikes < 0) {
-            console.warn(`Отрицательные счетчики для отзыва ${review.id}:`, { likes, dislikes })
-          }
-          
-          // Исправляем счетчики с учетом реакции пользователя
-          let correctedLikes = Math.max(0, likes)
-          let correctedDislikes = Math.max(0, dislikes)
-          
-          // Если у пользователя есть реакция, но счетчик 0, устанавливаем минимум 1
-          if (reaction === 'like' && correctedLikes === 0) {
-            correctedLikes = 1
-          }
-          if (reaction === 'dislike' && correctedDislikes === 0) {
-            correctedDislikes = 1
-          }
-          
           counts[review.id] = {
-            likes: correctedLikes,
-            dislikes: correctedDislikes
+            likes: review.total_likes || 0,
+            dislikes: review.total_dislikes || 0
           }
           
           console.log(`Отзыв ${review.id}:`, {
             reaction,
             total_likes: review.total_likes,
             total_dislikes: review.total_dislikes,
-            correctedLikes,
-            correctedDislikes,
             calculatedCounts: counts[review.id]
           })
         } catch (error) {
           console.warn(`Не удалось загрузить реакцию для отзыва ${review.id}:`, error)
           reactions[review.id] = null
           counts[review.id] = {
-            likes: Math.max(0, review.total_likes || 0),
-            dislikes: Math.max(0, review.total_dislikes || 0)
+            likes: review.total_likes || 0,
+            dislikes: review.total_dislikes || 0
           }
         }
       }
@@ -561,17 +517,7 @@ export default function MobileReviewsModal({
             >
               <ThumbsUp className={`w-4 h-4 ${userReactions[review.id] === 'like' ? 'fill-current' : ''}`} />
               <span className="text-sm font-medium">
-                {(() => {
-                  const baseCount = reactionCounts[review.id]?.likes ?? 0
-                  const userHasLiked = userReactions[review.id] === 'like'
-                  
-                  // Если у пользователя есть лайк, но счетчик 0 или отрицательный, показываем минимум 1
-                  if (userHasLiked && baseCount <= 0) {
-                    return 1
-                  }
-                  
-                  return baseCount
-                })()}
+                {reactionCounts[review.id]?.likes ?? 0}
               </span>
             </button>
             
@@ -586,17 +532,7 @@ export default function MobileReviewsModal({
             >
               <ThumbsDown className={`w-4 h-4 ${userReactions[review.id] === 'dislike' ? 'fill-current' : ''}`} />
               <span className="text-sm font-medium">
-                {(() => {
-                  const baseCount = reactionCounts[review.id]?.dislikes ?? 0
-                  const userHasDisliked = userReactions[review.id] === 'dislike'
-                  
-                  // Если у пользователя есть дизлайк, но счетчик 0 или отрицательный, показываем минимум 1
-                  if (userHasDisliked && baseCount <= 0) {
-                    return 1
-                  }
-                  
-                  return baseCount
-                })()}
+                {reactionCounts[review.id]?.dislikes ?? 0}
               </span>
             </button>
             

@@ -107,30 +107,19 @@ export default function ReviewSystem({ productId, productName }: ReviewSystemPro
     try {
       await createReaction({ review_id: reviewId, reaction_type: type })
       
-      // Обновляем локальное состояние
+      // Обновляем только user_reaction, счетчики обновятся через триггеры
       setReviews(prev => prev.map(review => {
         if (review.id === reviewId) {
-          const currentReaction = review.user_reaction
-          let totalLikes = review.total_likes
-          let totalDislikes = review.total_dislikes
-
-          // Убираем предыдущую реакцию
-          if (currentReaction === 'like') totalLikes--
-          if (currentReaction === 'dislike') totalDislikes--
-
-          // Добавляем новую реакцию
-          if (type === 'like') totalLikes++
-          if (type === 'dislike') totalDislikes++
-
           return {
             ...review,
-            user_reaction: type,
-            total_likes: totalLikes,
-            total_dislikes: totalDislikes
+            user_reaction: type
           }
         }
         return review
       }))
+      
+      // Перезагружаем отзывы чтобы получить актуальные счетчики
+      await loadReviews()
     } catch (err) {
       console.error('Error creating reaction:', err)
       setError('Ошибка при создании реакции')

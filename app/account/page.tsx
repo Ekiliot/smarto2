@@ -549,7 +549,7 @@ export default function AccountPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <User className="h-6 w-6 text-primary-600" />
+                    <User className="h-6 w-6 text-primary-600" />
                       )}
                     </div>
                     

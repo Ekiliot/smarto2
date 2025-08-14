@@ -5,18 +5,18 @@ import { Truck, RotateCcw, Headphones, Clock, Zap, Tag } from 'lucide-react'
 
 export function ScrollingBanner() {
   const bannerItems = [
-    { text: '🚚 Бесплатная доставка', icon: Truck, color: 'text-green-600' },
-    { text: '🔄 Удобный возврат', icon: RotateCcw, color: 'text-blue-600' },
-    { text: '🎧 Техподдержка 24/7', icon: Headphones, color: 'text-purple-600' },
-    { text: '⏰ Доставка за 1-5 дней', icon: Clock, color: 'text-orange-600' },
-    { text: '⚡ Получи товар в день заказа', icon: Zap, color: 'text-red-600' },
-    { text: '🏷️ Распродажа', icon: Tag, color: 'text-pink-600' },
-    { text: '🚚 Бесплатная доставка', icon: Truck, color: 'text-green-600' },
-    { text: '🔄 Удобный возврат', icon: RotateCcw, color: 'text-blue-600' },
-    { text: '🎧 Техподдержка 24/7', icon: Headphones, color: 'text-purple-600' },
-    { text: '⏰ Доставка за 1-5 дней', icon: Clock, color: 'text-orange-600' },
-    { text: '⚡ Получи товар в день заказа', icon: Zap, color: 'text-red-600' },
-    { text: '🏷️ Распродажа', icon: Tag, color: 'text-pink-600' }
+    { text: 'Бесплатная доставка', icon: Truck, color: 'text-green-600' },
+    { text: 'Удобный возврат', icon: RotateCcw, color: 'text-blue-600' },
+    { text: 'Техподдержка 24/7', icon: Headphones, color: 'text-purple-600' },
+    { text: 'Доставка за 1-5 дней', icon: Clock, color: 'text-orange-600' },
+    { text: 'Получи товар в день заказа', icon: Zap, color: 'text-red-600' },
+    { text: 'Распродажа', icon: Tag, color: 'text-pink-600' },
+    { text: 'Бесплатная доставка', icon: Truck, color: 'text-green-600' },
+    { text: 'Удобный возврат', icon: RotateCcw, color: 'text-blue-600' },
+    { text: 'Техподдержка 24/7', icon: Headphones, color: 'text-purple-600' },
+    { text: 'Доставка за 1-5 дней', icon: Clock, color: 'text-orange-600' },
+    { text: 'Получи товар в день заказа', icon: Zap, color: 'text-red-600' },
+    { text: 'Распродажа', icon: Tag, color: 'text-pink-600' }
   ]
 
   return (

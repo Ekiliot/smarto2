@@ -168,7 +168,7 @@ export const getReviewComments = async (reviewId: string): Promise<ReviewComment
   }
 
   console.log('Fetched comments data:', data)
-  return data || []
+  return (data || []) as ReviewComment[]
 }
 
 // Создать комментарий

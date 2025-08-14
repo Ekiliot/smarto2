@@ -1,5 +1,5 @@
 // Версия и имена кешей
-const CACHE_VERSION = '1.1.0'
+const CACHE_VERSION = '1.1.7'
 const CACHE_PREFIX = 'smarto2'
 const CACHES = {
   STATIC: `${CACHE_PREFIX}-static-v${CACHE_VERSION}`,
@@ -434,13 +434,13 @@ async function handleRequestError(request, error) {
   console.error(`❌ Request failed: ${request.url}`, error)
   
   // Для навигационных запросов показываем offline страницу
-  if (request.mode === 'navigate') {
-    const offlineResponse = await caches.match('/offline.html')
-    if (offlineResponse) {
-      return offlineResponse
+    if (request.mode === 'navigate') {
+      const offlineResponse = await caches.match('/offline.html')
+      if (offlineResponse) {
+        return offlineResponse
+      }
     }
-  }
-  
+    
   // Для изображений возвращаем placeholder
   if (URL_PATTERNS.IMAGES.test(request.url)) {
     return new Response(

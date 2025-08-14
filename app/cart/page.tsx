@@ -538,7 +538,7 @@ export default function CartPage() {
                           {updatingQuantity.has(pair.triggerProduct.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Minus className="h-3 w-3" />
+                          <Minus className="h-3 w-3" />
                           )}
                         </button>
                         <motion.span 
@@ -558,7 +558,7 @@ export default function CartPage() {
                           {updatingQuantity.has(pair.triggerProduct.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Plus className="h-3 w-3" />
+                          <Plus className="h-3 w-3" />
                           )}
                         </button>
                       </div>
@@ -685,7 +685,7 @@ export default function CartPage() {
                           {updatingQuantity.has(item.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Minus className="h-3 w-3" />
+                          <Minus className="h-3 w-3" />
                           )}
                         </button>
                         <motion.span 
@@ -705,7 +705,7 @@ export default function CartPage() {
                           {updatingQuantity.has(item.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Plus className="h-3 w-3" />
+                          <Plus className="h-3 w-3" />
                           )}
                         </button>
                       </div>
@@ -779,7 +779,7 @@ export default function CartPage() {
                           {updatingQuantity.has(item.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Minus className="h-3 w-3" />
+                          <Minus className="h-3 w-3" />
                           )}
                         </button>
                         <motion.span 
@@ -799,7 +799,7 @@ export default function CartPage() {
                           {updatingQuantity.has(item.id) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Plus className="h-3 w-3" />
+                          <Plus className="h-3 w-3" />
                           )}
                         </button>
                       </div>

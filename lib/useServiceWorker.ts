@@ -167,11 +167,11 @@ export function useServiceWorker() {
   const updateServiceWorker = useCallback(async () => {
     if (!state.registration) return
 
-    try {
+      try {
       setUpdateInfo(prev => ({ ...prev, isUpdating: true }))
       
       // Проверяем обновления
-      await state.registration.update()
+        await state.registration.update()
       
       // Если есть waiting worker, активируем его
       if (state.registration.waiting) {
@@ -179,7 +179,7 @@ export function useServiceWorker() {
       }
       
       console.log('🔄 Service Worker обновлен')
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Ошибка обновления Service Worker:', error)
       setUpdateInfo(prev => ({ ...prev, isUpdating: false }))
     }
@@ -195,9 +195,9 @@ export function useServiceWorker() {
   // Кеширование страницы
   const cachePage = useCallback(async (url: string) => {
     sendMessageToSW({
-      type: 'CACHE_PAGE',
+          type: 'CACHE_PAGE',
       data: { url }
-    })
+        })
     console.log(`📱 Запрошено кеширование: ${url}`)
   }, [sendMessageToSW])
 
@@ -246,7 +246,7 @@ export function useServiceWorker() {
         { type: 'GET_CACHE_INFO' },
         [messageChannel.port2]
       )
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Ошибка получения информации о кеше:', error)
     }
   }, [])
@@ -291,7 +291,7 @@ export function useServiceWorker() {
     } catch (error) {
       console.error('❌ Ошибка подписки на push уведомления:', error)
       return null
-    }
+      }
   }, [state.registration])
 
   // Получение статистики производительности кеша

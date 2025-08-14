@@ -283,7 +283,7 @@ export default function ReviewCard({
               }`}
             >
               <ThumbsUp className="w-4 h-4" />
-              <span className="text-sm">{review.total_likes}</span>
+              <span className="text-sm">{review.total_likes || 0}</span>
             </button>
             <button
               onClick={() => handleReaction('dislike')}
@@ -294,7 +294,7 @@ export default function ReviewCard({
               }`}
             >
               <ThumbsDown className="w-4 h-4" />
-              <span className="text-sm">{review.total_dislikes}</span>
+              <span className="text-sm">{review.total_dislikes || 0}</span>
             </button>
           </div>
 

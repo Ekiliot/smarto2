@@ -31,6 +31,7 @@ export interface ReviewComment {
   updated_at: string
   parent_comment_id?: string
   reply_count: number
+  total_likes: number
   user?: {
     id: string
     email: string

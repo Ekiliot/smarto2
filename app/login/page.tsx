@@ -86,7 +86,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 mobile-nav-safe-area login-page-mobile">
       {/* Header только для десктопа */}
       <div className="hidden md:block">
-        <Header />
+      <Header />
       </div>
       
       <main className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 md:py-12 min-h-screen md:min-h-0 flex flex-col justify-start md:justify-center login-content">
@@ -265,22 +265,22 @@ export default function LoginPage() {
               </p>
 
               {emailDomain && (
-                                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
                     className="mb-4 md:mb-6"
-                  >
-                    <a
-                      href={getEmailProviderUrl(emailDomain)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                >
+                  <a
+                    href={getEmailProviderUrl(emailDomain)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                       className="inline-flex items-center px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl md:rounded-lg transition-colors text-base font-medium shadow-sm"
-                    >
+                  >
                       <Mail className="h-5 w-5 mr-2" />
-                      Открыть {emailDomain}
-                    </a>
-                  </motion.div>
+                    Открыть {emailDomain}
+                  </a>
+                </motion.div>
               )}
 
               <motion.button

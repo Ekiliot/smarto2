@@ -84,9 +84,8 @@ export default function CommentsModal({
         const isLiked = await getUserCommentLike(comment.id)
         likes[comment.id] = isLiked
         
-        // Используем reply_count как счетчик лайков (временно)
-        // В будущем нужно добавить поле total_likes в таблицу review_comments
-        counts[comment.id] = comment.reply_count || 0
+        // Используем total_likes из базы данных
+        counts[comment.id] = comment.total_likes || 0
         
         // Обрабатываем ответы рекурсивно
         if (comment.replies && comment.replies.length > 0) {
@@ -97,7 +96,7 @@ export default function CommentsModal({
       } catch (error) {
         console.warn(`Не удалось загрузить лайк для комментария ${comment.id}:`, error)
         likes[comment.id] = false
-        counts[comment.id] = comment.reply_count || 0
+        counts[comment.id] = comment.total_likes || 0
       }
     }
     
@@ -120,22 +119,15 @@ export default function CommentsModal({
       if (isCurrentlyLiked) {
         // Убираем лайк
         await deleteCommentLike(commentId)
-        setCommentLikes(prev => ({ ...prev, [commentId]: false }))
-        setCommentLikeCounts(prev => ({ 
-          ...prev, 
-          [commentId]: Math.max(0, (prev[commentId] || 0) - 1) 
-        }))
         console.log(`Убран лайк с комментария ${commentId}`)
       } else {
         // Ставим лайк
         await createCommentLike(commentId)
-        setCommentLikes(prev => ({ ...prev, [commentId]: true }))
-        setCommentLikeCounts(prev => ({ 
-          ...prev, 
-          [commentId]: (prev[commentId] || 0) + 1 
-        }))
         console.log(`Добавлен лайк на комментарий ${commentId}`)
       }
+      
+      // Перезагружаем комментарии чтобы получить актуальные счетчики
+      await loadComments()
     } catch (error) {
       console.error('Error toggling comment like:', error)
       // Показываем пользователю ошибку

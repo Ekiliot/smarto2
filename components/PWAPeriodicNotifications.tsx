@@ -28,6 +28,15 @@ export function PWAPeriodicNotifications({
       return
     }
 
+    // Проверяем платформу - на ПК не показываем уведомления
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    const isMobile = /iphone|ipad|ipod|android/.test(userAgent)
+    
+    if (!isMobile) {
+      console.log('PWA notifications disabled on desktop platform')
+      return
+    }
+
     const checkAndShowNotification = () => {
       const now = Date.now()
       const lastShown = localStorage.getItem('pwa-notification-last-shown')
@@ -77,10 +86,10 @@ export function PWAPeriodicNotifications({
     }
 
     // Проверяем сразу (с небольшой задержкой чтобы приложение успело загрузиться)
-    const initialTimeout = setTimeout(checkAndShowNotification, 3000)
+    const initialTimeout = setTimeout(checkAndShowNotification, 10000)
 
-    // Затем проверяем каждый час
-    const interval = setInterval(checkAndShowNotification, 60 * 60 * 1000)
+    // Затем проверяем каждые 6 часов (было каждый час - слишком часто)
+    const interval = setInterval(checkAndShowNotification, 6 * 60 * 60 * 1000)
 
     return () => {
       clearTimeout(initialTimeout)
