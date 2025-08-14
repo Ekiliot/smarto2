@@ -20,6 +20,9 @@ export function PWAPeriodicNotifications({
   const [hasShownToday, setHasShownToday] = useState(false)
 
   useEffect(() => {
+    // Проверяем, что мы в браузере
+    if (typeof window === 'undefined') return
+    
     // Если PWA уже установлено или нет возможности установки - не показываем уведомления
     if (isInstalled || !canInstall) {
       return
@@ -87,6 +90,9 @@ export function PWAPeriodicNotifications({
 
   // Сбрасываем флаг показа сегодня в полночь
   useEffect(() => {
+    // Проверяем, что мы в браузере
+    if (typeof window === 'undefined') return
+
     const resetDailyFlag = () => {
       const now = new Date()
       const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
@@ -114,12 +120,18 @@ export function PWAPeriodicNotifications({
 // Хук для управления PWA уведомлениями
 export function usePWANotifications() {
   const resetNotifications = () => {
+    if (typeof window === 'undefined') return
+    
     localStorage.removeItem('pwa-notification-last-shown')
     localStorage.removeItem('pwa-notification-count')
     localStorage.removeItem('pwa-notification-today')
   }
 
   const getNotificationStats = () => {
+    if (typeof window === 'undefined') {
+      return { lastShown: null, showCount: 0, shownToday: false, canShowMore: true }
+    }
+    
     const lastShown = localStorage.getItem('pwa-notification-last-shown')
     const showCount = parseInt(localStorage.getItem('pwa-notification-count') || '0')
     const todayKey = new Date().toDateString()
@@ -134,6 +146,8 @@ export function usePWANotifications() {
   }
 
   const forceShowNotification = () => {
+    if (typeof window === 'undefined') return
+    
     // Сбрасываем ограничения для принудительного показа
     localStorage.removeItem('pwa-notification-last-shown')
     localStorage.removeItem('pwa-notification-today')

@@ -31,6 +31,9 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown')
 
   useEffect(() => {
+    // Проверяем, что мы в браузере
+    if (typeof window === 'undefined') return
+
     // Проверяем, запущено ли приложение как PWA
     const checkIfInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches
