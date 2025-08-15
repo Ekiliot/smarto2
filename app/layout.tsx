@@ -38,20 +38,22 @@ export const metadata: Metadata = {
     siteName: 'Smarto',
     title: 'Smarto - Smart Home Store',
     description: 'Leading smart home and electronics store in Moldova',
-    images: '/icons/icon-512x512.svg',
+    images: '/icon.png',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Smarto - Smart Home Store',
     description: 'Leading smart home and electronics store in Moldova',
-    images: '/icons/icon-512x512.svg',
+    images: '/icon.png',
   },
   icons: {
     icon: [
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
       { url: '/icons/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
       { url: '/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml' },
     ],
     apple: [
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
       { url: '/icons/apple-touch-icon.svg', sizes: '180x180', type: 'image/svg+xml' },
     ],
   },
