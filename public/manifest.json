@@ -15,6 +15,12 @@
   "dir": "ltr",
   "icons": [
     {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
       "src": "/icons/icon-72x72.svg",
       "sizes": "72x72",
       "type": "image/svg+xml",

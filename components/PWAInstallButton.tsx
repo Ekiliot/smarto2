@@ -15,10 +15,10 @@ export function PWAInstallButton({
   size = 'md', 
   className = '' 
 }: PWAInstallButtonProps) {
-  const { canInstall, showInstallPrompt, isInstalled } = usePWAInstall()
+  const { canInstall, showInstallPrompt, isInstalled, isMobile } = usePWAInstall()
 
-  // Не показываем кнопку если приложение уже установлено
-  if (isInstalled || !canInstall) {
+  // Не показываем кнопку если приложение уже установлено или это не мобильное устройство
+  if (isInstalled || !canInstall || !isMobile) {
     return null
   }
 
@@ -55,9 +55,9 @@ export function PWAInstallButton({
 
 // Компонент для показа в мобильном меню
 export function PWAInstallMenuItem() {
-  const { canInstall, showInstallPrompt, isInstalled } = usePWAInstall()
+  const { canInstall, showInstallPrompt, isInstalled, isMobile } = usePWAInstall()
 
-  if (isInstalled || !canInstall) {
+  if (isInstalled || !canInstall || !isMobile) {
     return null
   }
 

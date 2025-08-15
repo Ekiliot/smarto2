@@ -10,6 +10,7 @@ interface PWAInstallContextType {
   hideInstallPrompt: () => void
   installApp: () => Promise<void>
   isInstalled: boolean
+  isMobile: boolean
 }
 
 const PWAInstallContext = createContext<PWAInstallContextType | undefined>(undefined)
@@ -29,6 +30,7 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
   const [showPrompt, setShowPrompt] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown')
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Проверяем, что мы в браузере
@@ -44,13 +46,19 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       setIsInstalled(isStandalone || isFullscreen || isMinimalUi || isIOSStandalone)
     }
 
-    // Определяем платформу
+    // Определяем платформу и проверяем мобильность
     const detectPlatform = () => {
       const userAgent = window.navigator.userAgent.toLowerCase()
-      if (/iphone|ipad|ipod/.test(userAgent)) {
-        setPlatform('ios')
-      } else if (/android/.test(userAgent)) {
-        setPlatform('android')
+      const isMobileDevice = /iphone|ipad|ipod|android/.test(userAgent)
+      
+      setIsMobile(isMobileDevice)
+      
+      if (isMobileDevice) {
+        if (/iphone|ipad|ipod/.test(userAgent)) {
+          setPlatform('ios')
+        } else if (/android/.test(userAgent)) {
+          setPlatform('android')
+        }
       } else {
         setPlatform('desktop')
       }
@@ -64,19 +72,20 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       e.preventDefault()
       const promptEvent = e as BeforeInstallPromptEvent
       setDeferredPrompt(promptEvent)
-      setCanInstall(true)
       
-      // На ПК не показываем автоматический промпт вообще
-      const userAgent = window.navigator.userAgent.toLowerCase()
-      const isMobile = /iphone|ipad|ipod|android/.test(userAgent)
-      
+      // Устанавливаем canInstall только для мобильных устройств
       if (isMobile) {
+        setCanInstall(true)
+        
         // Показываем промпт через некоторое время только на мобильных
         setTimeout(() => {
           if (!isInstalled) {
             setShowPrompt(true)
           }
-        }, 250000000) // Показываем через 30 секунд (было 5)
+        }, 30000) // Показываем через 30 секунд
+      } else {
+        // На ПК не показываем предложение установки вообще
+        setCanInstall(false)
       }
     }
 
@@ -96,10 +105,13 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
-  }, [isInstalled])
+  }, [isInstalled, isMobile])
 
   const showInstallPrompt = () => {
-    setShowPrompt(true)
+    // Показываем промпт только на мобильных устройствах
+    if (isMobile) {
+      setShowPrompt(true)
+    }
   }
 
   const hideInstallPrompt = () => {
@@ -172,7 +184,8 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
     showInstallPrompt,
     hideInstallPrompt,
     installApp,
-    isInstalled
+    isInstalled,
+    isMobile
   }
 
   const instructions = getInstallInstructions()
@@ -183,7 +196,7 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       
       {/* Промпт для установки PWA */}
       <AnimatePresence>
-        {showPrompt && canInstall && !isInstalled && (
+        {showPrompt && canInstall && !isInstalled && isMobile && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
