@@ -15,8 +15,10 @@ import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
 import { ImageUpload } from '@/components/ImageUpload'
 import { MultipleImageUpload } from '@/components/MultipleImageUpload'
+import { VideoUpload } from '@/components/VideoUpload'
+import { ProductGallery } from '@/components/ProductGallery'
 import { HTMLEditor } from '@/components/HTMLEditor'
-import { getProduct, updateProduct, getAllCategories, uploadProductImage } from '@/lib/supabase'
+import { getProduct, updateProduct, getAllCategories, uploadProductImage, uploadProductVideo } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 
 interface Category {
@@ -64,6 +66,7 @@ export default function EditProductPage() {
     purchase_price: '',
     original_price: '',
     image_url: '',
+    video_url: '',
     category_id: '',
     brand: '',
     in_stock: true,
@@ -72,6 +75,7 @@ export default function EditProductPage() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [images, setImages] = useState<string[]>([])
 
@@ -88,12 +92,19 @@ export default function EditProductPage() {
   const loadData = async () => {
     try {
       setLoading(true)
+      console.log('Loading data for product ID:', productId)
+      console.log('Params:', params)
+      
       const [productResult, categoriesResult] = await Promise.all([
         getProduct(productId),
         getAllCategories()
       ])
 
+      console.log('Product result:', productResult)
+      console.log('Categories result:', categoriesResult)
+
       if (productResult.error) {
+        console.error('Product error:', productResult.error)
         throw productResult.error
       }
 
@@ -103,6 +114,7 @@ export default function EditProductPage() {
 
       const productData = productResult.data
       if (productData) {
+        console.log('Product data loaded:', productData)
         setProduct(productData)
         setFormData({
           name: productData.name,
@@ -111,6 +123,7 @@ export default function EditProductPage() {
           purchase_price: productData.purchase_price.toString(),
           original_price: productData.original_price?.toString() || '',
           image_url: productData.image_url,
+          video_url: productData.video_url || '',
           category_id: productData.category_id,
           brand: productData.brand,
           in_stock: productData.in_stock,
@@ -120,9 +133,14 @@ export default function EditProductPage() {
         setFeatures(productData.features?.length ? productData.features : [''])
         
         if (productData.specifications) {
-          const specs = Object.entries(productData.specifications).map(([key, value]) => ({ key, value }))
+          const specs = Object.entries(productData.specifications).map(([key, value]) => ({ 
+            key, 
+            value: String(value) 
+          }))
           setSpecifications(specs.length ? specs : [{ key: '', value: '' }])
         }
+      } else {
+        console.log('No product data found')
       }
 
       if (categoriesResult.data) {
@@ -193,6 +211,18 @@ export default function EditProductPage() {
         finalImageUrl = imageUrl
       }
 
+      // Загружаем видео если выбран файл
+      let finalVideoUrl = formData.video_url
+      if (selectedVideoFile) {
+        setIsUploadingImage(true)
+        const { data: videoUrl, error: uploadError } = await uploadProductVideo(selectedVideoFile, productId)
+        
+        if (uploadError) {
+          throw uploadError
+        }
+        finalVideoUrl = videoUrl
+      }
+
       // Загружаем дополнительные изображения
       if (selectedFiles.length > 0) {
         setIsUploadingImage(true)
@@ -222,6 +252,7 @@ export default function EditProductPage() {
         purchase_price: parseFloat(formData.purchase_price || formData.price),
         original_price: formData.original_price ? parseFloat(formData.original_price) : undefined,
         image_url: finalImageUrl,
+        video_url: finalVideoUrl,
         images: finalImages,
         category_id: formData.category_id,
         brand: formData.brand.trim(),
@@ -383,32 +414,18 @@ export default function EditProductPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Главное изображение товара
+                    Галерея товара
                   </label>
-                  <ImageUpload
-                    value={formData.image_url}
-                    onChange={(url) => handleInputChange('image_url', url)}
-                    onFileSelect={(file) => setSelectedFile(file)}
-                    placeholder="Загрузить главное изображение"
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Дополнительные изображения (до 5)
-                  </label>
-                  <MultipleImageUpload
-                    value={images}
-                    onChange={setImages}
-                    onFileSelect={(files) => {
-                      setSelectedFiles(prev => [...prev, ...files])
-                    }}
-                    onFileRemove={(index) => {
-                      setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-                    }}
-                    maxImages={5}
-                    placeholder="Загрузить дополнительные изображения"
+                  <ProductGallery
+                    mainImage={formData.image_url}
+                    onMainImageChange={(url) => handleInputChange('image_url', url)}
+                    additionalImages={images}
+                    onAdditionalImagesChange={setImages}
+                    videoUrl={formData.video_url}
+                    onVideoUrlChange={(url) => handleInputChange('video_url', url)}
+                    onMainImageFileSelect={(file) => setSelectedFile(file)}
+                    onAdditionalImagesFileSelect={(files) => setSelectedFiles(prev => [...prev, ...files])}
+                    onVideoFileSelect={(file) => setSelectedVideoFile(file)}
                     disabled={saving}
                   />
                 </div>

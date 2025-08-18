@@ -85,12 +85,12 @@ export function MobileHeader() {
   }
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      (navigator as any).share({
         title: 'Посмотрите этот товар!',
-        url: window.location.href
+        url: typeof window !== 'undefined' ? window.location.href : ''
       })
-    } else {
+    } else if (typeof navigator !== 'undefined' && typeof window !== 'undefined' && navigator.clipboard) {
       // Fallback для браузеров без поддержки Web Share API
       navigator.clipboard.writeText(window.location.href)
       // Можно добавить уведомление о копировании ссылки

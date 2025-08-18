@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react'
+import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { Download, X, Smartphone, Monitor } from 'lucide-react'
 
 interface PWAInstallContextType {
@@ -11,6 +11,7 @@ interface PWAInstallContextType {
   installApp: () => Promise<void>
   isInstalled: boolean
   isMobile: boolean
+  isInstalling: boolean
 }
 
 const PWAInstallContext = createContext<PWAInstallContextType | undefined>(undefined)
@@ -29,8 +30,19 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
   const [canInstall, setCanInstall] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isInstalling, setIsInstalling] = useState(false)
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown')
   const [isMobile, setIsMobile] = useState(false)
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  // Настройка частоты показа (в миллисекундах)
+  // Измените SHOW_INTERVAL для настройки частоты:
+  // - 1 день: 24 * 60 * 60 * 1000
+  // - 2 дня: 2 * 24 * 60 * 60 * 1000 (текущее значение)
+  // - 3 дня: 3 * 24 * 60 * 60 * 1000
+  // - 1 неделя: 7 * 24 * 60 * 60 * 1000
+  const SHOW_INTERVAL = 2 * 24 * 60 * 60 * 1000 // 2 дня по умолчанию
+  const INITIAL_DELAY = 30000 // 30 секунд до первого показа
 
   useEffect(() => {
     // Проверяем, что мы в браузере
@@ -54,14 +66,25 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       setIsMobile(isMobileDevice)
       
       if (isMobileDevice) {
-        if (/iphone|ipad|ipod/.test(userAgent)) {
-          setPlatform('ios')
-        } else if (/android/.test(userAgent)) {
-          setPlatform('android')
+      if (/iphone|ipad|ipod/.test(userAgent)) {
+        setPlatform('ios')
+      } else if (/android/.test(userAgent)) {
+        setPlatform('android')
         }
       } else {
         setPlatform('desktop')
       }
+    }
+
+    // Проверяем, когда в последний раз показывали промпт
+    const checkLastShown = () => {
+      const lastShown = localStorage.getItem('pwa_prompt_last_shown')
+      const now = Date.now()
+      
+      if (!lastShown || (now - parseInt(lastShown)) > SHOW_INTERVAL) {
+        return true // Можно показать
+      }
+      return false // Недавно показывали
     }
 
     checkIfInstalled()
@@ -77,12 +100,16 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       if (isMobile) {
         setCanInstall(true)
         
-        // Показываем промпт через некоторое время только на мобильных
+        // Показываем промпт только если прошло достаточно времени
+        if (checkLastShown()) {
         setTimeout(() => {
           if (!isInstalled) {
             setShowPrompt(true)
+              // Записываем время показа
+              localStorage.setItem('pwa_prompt_last_shown', Date.now().toString())
+            }
+          }, INITIAL_DELAY) // Показываем через 30 секунд
           }
-        }, 30000) // Показываем через 30 секунд
       } else {
         // На ПК не показываем предложение установки вообще
         setCanInstall(false)
@@ -107,21 +134,65 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
     }
   }, [isInstalled, isMobile])
 
-  const showInstallPrompt = () => {
+  const showInstallPrompt = async () => {
     // Показываем промпт только на мобильных устройствах
-    if (isMobile) {
-      setShowPrompt(true)
+    if (!isMobile) return
+    
+    // Показываем анимацию установки
+    setShowPrompt(true)
+    
+    // Записываем время показа
+    localStorage.setItem('pwa_prompt_last_shown', Date.now().toString())
+    
+    // Если это Android/Chrome, показываем анимацию загрузки
+    if (platform === 'android' && deferredPrompt) {
+      // Имитируем анимацию загрузки
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Показываем нативный промпт установки
+      try {
+        await deferredPrompt.prompt()
+        const { outcome } = await deferredPrompt.userChoice
+        
+        if (outcome === 'accepted') {
+          console.log('Пользователь согласился на установку')
+        } else {
+          console.log('Пользователь отклонил установку')
+        }
+        
+        setDeferredPrompt(null)
+        setShowPrompt(false)
+      } catch (error) {
+        console.error('Ошибка при установке PWA:', error)
+        setShowPrompt(false)
+      }
     }
+    // Для iOS просто показываем инструкции
   }
 
   const hideInstallPrompt = () => {
     setShowPrompt(false)
   }
 
+  // Обработка свайпа вниз
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    if (info.offset.y > 100) { // Если свайпнули вниз больше 100px
+      hideInstallPrompt()
+    }
+  }
+
   const installApp = async () => {
     if (!deferredPrompt) return
 
     try {
+      // Показываем анимацию загрузки
+      setIsInstalling(true)
+      setShowPrompt(true)
+      
+      // Имитируем анимацию загрузки (2 секунды)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Показываем нативный промпт установки
       await deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
       
@@ -135,6 +206,9 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       setShowPrompt(false)
     } catch (error) {
       console.error('Ошибка при установке PWA:', error)
+      setShowPrompt(false)
+    } finally {
+      setIsInstalling(false)
     }
   }
 
@@ -185,7 +259,8 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
     hideInstallPrompt,
     installApp,
     isInstalled,
-    isMobile
+    isMobile,
+    isInstalling
   }
 
   const instructions = getInstallInstructions()
@@ -205,12 +280,18 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
             onClick={hideInstallPrompt}
           >
             <motion.div
+              ref={modalRef}
               initial={{ y: '100%', opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl max-w-md w-full p-6 relative"
               onClick={(e) => e.stopPropagation()}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.1}
+              onDragEnd={handleDragEnd}
+              style={{ touchAction: 'pan-y' }}
             >
               {/* Индикатор свайпа для мобильных */}
               <div className="md:hidden flex justify-center mb-4">
@@ -235,25 +316,9 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
                   {instructions.title}
                 </h3>
                 
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Получите быстрый доступ к Smarto прямо с экрана устройства
                 </p>
-
-                {/* Преимущества */}
-                <div className="text-left space-y-2 mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Быстрый запуск</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Работает офлайн</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Как нативное приложение</span>
-                  </div>
-                </div>
 
                 {/* Кнопки */}
                 <div className="space-y-3">
@@ -273,12 +338,26 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
                   ) : (
                     <motion.button
                       onClick={installApp}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2"
+                      disabled={isInstalling}
+                      whileHover={{ scale: isInstalling ? 1 : 1.02 }}
+                      whileTap={{ scale: isInstalling ? 1 : 0.98 }}
+                      className={`w-full font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2 ${
+                        isInstalling 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-primary-600 hover:bg-primary-700 text-white'
+                      }`}
                     >
-                      <Download className="h-5 w-5" />
-                      <span>Установить приложение</span>
+                      {isInstalling ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Установка...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-5 w-5" />
+                          <span>Установить приложение</span>
+                        </>
+                      )}
                     </motion.button>
                   )}
                   

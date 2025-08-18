@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { X, Heart, MessageCircle, Share2, ShoppingCart } from 'lucide-react'
+import { X, Heart, MessageCircle, Share2, ShoppingCart, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import { useCart } from '@/components/CartProvider'
 import { useWishlist } from '@/components/WishlistProvider'
@@ -37,6 +37,8 @@ export default function MediaViewer({
   onOpenComments,
   allProducts
 }: MediaViewerProps) {
+  console.log('🚀 MediaViewer обновлен! Версия с новыми логами!')
+  
   const { user } = useAuth()
   const { addToCart } = useCart()
   const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist: checkIsInWishlist } = useWishlist()
@@ -46,13 +48,28 @@ export default function MediaViewer({
   const [likeCount, setLikeCount] = useState(review.total_likes || 0)
 
   const [showFullTextModal, setShowFullTextModal] = useState(false)
+  const [showFullProductName, setShowFullProductName] = useState(false)
   const [currentProductIndex, setCurrentProductIndex] = useState(0)
   const [isShowingProducts, setIsShowingProducts] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   
+  // Состояния для видео плеера
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [showControls, setShowControls] = useState(false)
+  
+  // Состояния для двойных тапов
+  const [lastTap, setLastTap] = useState(0)
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false)
+  const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 })
+  
   const modalRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const productVideoRef = useRef<HTMLVideoElement>(null)
   const dragFromButtonsRef = useRef(false)
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Получаем все медиа файлы отзыва
   const allMedia = review.media || []
@@ -71,11 +88,59 @@ export default function MediaViewer({
   
   // Получаем текущий товар и его медиа
   const currentProduct = allProducts?.[currentProductIndex]
-  // Формируем массив изображений как на странице товара
-  const currentProductImages = currentProduct ? [
+  
+  console.log('🔍 ПРЯМО ПЕРЕД useMemo - currentProduct:', currentProduct?.name)
+  
+  // Отладочная информация для currentProduct
+  console.log('🔍 currentProduct debug:', {
+    currentProductIndex,
+    allProductsLength: allProducts?.length || 0,
+    currentProduct: currentProduct ? {
+      name: currentProduct.name,
+      id: currentProduct.id,
+      video_url: currentProduct.video_url,
+      image_url: currentProduct.image_url,
+      images: currentProduct.images
+    } : null,
+    hasCurrentProduct: !!currentProduct
+  })
+  
+  // Формируем массив изображений как на странице товара, но видео ставим первым
+  const currentProductImages = useMemo(() => {
+    console.log('🔍 useMemo сработал для currentProductImages:', {
+      currentProduct: currentProduct ? currentProduct.name : 'null',
+      hasCurrentProduct: !!currentProduct
+    })
+    
+    if (!currentProduct) {
+      console.log('❌ currentProduct is null, возвращаем пустой массив')
+      return []
+    }
+    
+    const images = [
     currentProduct.image_url, // Главное изображение
     ...(currentProduct.images || []) // Дополнительные изображения
-  ].filter(Boolean) : [] // Убираем пустые значения
+    ].filter(Boolean) // Убираем пустые значения
+    
+    console.log('🔍 Формирование массива медиа товара:', {
+      productName: currentProduct.name,
+      video_url: currentProduct.video_url,
+      image_url: currentProduct.image_url,
+      images: currentProduct.images,
+      filteredImages: images,
+      hasVideo: !!currentProduct.video_url
+    })
+    
+    // Если есть видео, ставим его первым
+    if (currentProduct.video_url) {
+      const result = [currentProduct.video_url, ...images]
+      console.log('✅ Видео добавлено в начало:', result)
+      return result
+    }
+    
+    console.log('❌ Видео не найдено, возвращаем только изображения:', images)
+    return images
+  }, [currentProduct?.name, currentProduct?.video_url, currentProduct?.image_url, currentProduct?.images])
   
   const [currentProductMediaIndex, setCurrentProductMediaIndex] = useState(0)
 
@@ -87,7 +152,7 @@ export default function MediaViewer({
   // Отладочная информация для отзывов
   useEffect(() => {
     if (isOpen && !isShowingProducts) {
-      console.log('Показываем отзывы:', {
+      console.log('🔍 Показываем отзывы:', {
         currentReviewIndex,
         allReviewsLength: allReviews.length,
         reviewsWithMediaLength: reviewsWithMedia.length,
@@ -97,24 +162,102 @@ export default function MediaViewer({
     }
   }, [isOpen, isShowingProducts, currentReviewIndex, allReviews.length, reviewsWithMedia.length, hasMedia, review])
 
+  // Отладочная информация для переключения режимов
+  useEffect(() => {
+    console.log('🔄 Изменение режима MediaViewer:', {
+      isOpen,
+      isShowingProducts,
+      shouldShowReview,
+      hasReviewsWithMedia: reviewsWithMedia.length > 0,
+      hasProducts: allProducts && allProducts.length > 0,
+      reviewsWithMediaLength: reviewsWithMedia.length,
+      allProductsLength: allProducts?.length || 0,
+      currentReviewIndex,
+      canSwitchToProducts: currentReviewIndex >= reviewsWithMedia.length - 1
+    })
+  }, [isOpen, isShowingProducts, shouldShowReview, reviewsWithMedia.length, allProducts?.length, currentReviewIndex])
+
   // Отладочная информация для изображений товара
   useEffect(() => {
+    if (isOpen && isShowingProducts) {
+      console.log('🔍 Показываем товары:', {
+        currentProductIndex,
+        allProductsLength: allProducts?.length || 0,
+        currentProduct,
+        currentProductImages,
+        currentProductMediaIndex,
+        videoUrl: currentProduct?.video_url,
+        hasVideo: !!currentProduct?.video_url
+      })
+      
+      // Проверяем все товары на наличие видео
+      if (allProducts && allProducts.length > 0) {
+        console.log('🔍 Проверка всех товаров на наличие видео:')
+        allProducts.forEach((product, index) => {
+          if (product.video_url) {
+            console.log(`✅ Товар ${index}: ${product.name} - есть видео: ${product.video_url}`)
+          } else {
+            console.log(`❌ Товар ${index}: ${product.name} - нет видео`)
+          }
+        })
+      }
+    }
+  }, [isOpen, isShowingProducts, currentProductIndex, allProducts?.length, currentProduct, currentProductImages, currentProductMediaIndex])
+
+  // Дополнительная отладочная информация для currentProductImages
+  useEffect(() => {
     if (currentProduct && isShowingProducts) {
-      console.log('Текущий товар:', {
-        name: currentProduct.name,
-        id: currentProduct.id,
+      console.log('🔍 Детальная информация о currentProductImages:', {
+        productName: currentProduct.name,
+        productId: currentProduct.id,
+        video_url: currentProduct.video_url,
         image_url: currentProduct.image_url,
         images: currentProduct.images,
         currentProductImages,
-        currentProductMediaIndex,
-        hasMultipleImages: currentProductImages.length > 1,
-        currentImageUrl: currentProductImages[currentProductMediaIndex]
+        currentProductImagesLength: currentProductImages.length,
+        currentProductMediaIndex
       })
     }
-  }, [currentProduct, isShowingProducts, currentProductImages, currentProductMediaIndex])
+  }, [currentProduct, currentProductImages, currentProductMediaIndex, isShowingProducts])
+
+  // Очистка таймеров при размонтировании
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Сброс состояний видео при смене медиа
+  useEffect(() => {
+    setCurrentTime(0)
+    setDuration(0)
+    setIsPlaying(false)
+  }, [currentProductMediaIndex, currentMediaIndex])
 
   // Проверяем, есть ли у товара несколько изображений
   const hasMultipleProductImages = currentProductImages.length > 1
+
+  const nextProductMedia = () => {
+    if (currentProductMediaIndex < currentProductImages.length - 1) {
+      setCurrentProductMediaIndex(prev => prev + 1)
+      // Сбрасываем состояния видео при смене медиа
+      setCurrentTime(0)
+      setDuration(0)
+      setIsPlaying(false)
+    }
+  }
+
+  const prevProductMedia = () => {
+    if (currentProductMediaIndex > 0) {
+      setCurrentProductMediaIndex(prev => prev - 1)
+      // Сбрасываем состояния видео при смене медиа
+      setCurrentTime(0)
+      setDuration(0)
+      setIsPlaying(false)
+    }
+  }
 
   // Управляем скролл при открытии/закрытии
   useEffect(() => {
@@ -306,33 +449,130 @@ export default function MediaViewer({
   }
 
   const handleShareProduct = (product: any) => {
-    console.log('📤 handleShareProduct called with product:', product)
-    if (product && product.id) {
-      const productUrl = `${window.location.origin}/product/${product.id}`
-      navigator.clipboard.writeText(productUrl).then(() => {
-        showNotification({
-          type: 'success',
-          title: 'Ссылка скопирована',
-          message: 'Поделитесь товаром с друзьями',
-          icon: 'check'
-        })
-        console.log('✅ Product link copied successfully')
-      }).catch(() => {
-        showNotification({
-          type: 'error',
-          title: 'Ошибка',
-          message: 'Не удалось скопировать ссылку'
-        })
-        console.error('❌ Failed to copy product link')
-      })
-    } else {
-      console.error('❌ Invalid product:', product)
+    console.log('🔗 Поделиться товаром:', product.name)
+    // Здесь может быть логика для поделиться товаром
+  }
+
+  // Функции для видео плеера
+  const handleVideoPlay = () => {
+    const video = isShowingProducts ? productVideoRef.current : videoRef.current
+    console.log('🎬 handleVideoPlay вызван:', {
+      isShowingProducts,
+      video: !!video,
+      isPlaying
+    })
+    if (video) {
+      if (isPlaying) {
+        video.pause()
+        console.log('⏸️ Видео поставлено на паузу')
+      } else {
+        video.play()
+        console.log('▶️ Видео запущено')
+      }
+      setIsPlaying(!isPlaying)
     }
   }
 
-  const handleShareReview = () => {
-    if (review && review.id) {
-      const reviewUrl = `${window.location.origin}/product/${review.product_id}#review-${review.id}`
+  const handleVideoMute = () => {
+    const video = isShowingProducts ? productVideoRef.current : videoRef.current
+    console.log('🔇 handleVideoMute вызван:', {
+      isShowingProducts,
+      video: !!video,
+      isMuted
+    })
+    if (video) {
+      video.muted = !isMuted
+      setIsMuted(!isMuted)
+      console.log('🔇 Состояние звука изменено:', !isMuted ? 'выключен' : 'включен')
+    }
+  }
+
+  const handleVideoTimeUpdate = () => {
+    const video = isShowingProducts ? productVideoRef.current : videoRef.current
+    if (video) {
+      const newTime = video.currentTime
+      const newDuration = video.duration || 0
+      if (newTime !== currentTime || newDuration !== duration) {
+        setCurrentTime(newTime)
+        setDuration(newDuration)
+        console.log('⏱️ Время видео обновлено:', {
+          currentTime: newTime,
+          duration: newDuration,
+          progress: `${((newTime / newDuration) * 100).toFixed(1)}%`
+        })
+      }
+    }
+  }
+
+  const handleVideoSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const video = isShowingProducts ? productVideoRef.current : videoRef.current
+    console.log('🎯 handleVideoSeek вызван:', {
+      isShowingProducts,
+      video: !!video,
+      duration,
+      event: e.type
+    })
+    if (video && duration > 0) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const clickX = e.clientX - rect.left
+      const newTime = (clickX / rect.width) * duration
+      video.currentTime = newTime
+      setCurrentTime(newTime)
+      console.log('🎯 Видео перемотано на:', {
+        clickX,
+        rectWidth: rect.width,
+        newTime: formatTime(newTime),
+        totalDuration: formatTime(duration)
+      })
+    }
+  }
+
+  const showVideoControls = () => {
+    setShowControls(true)
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current)
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false)
+    }, 3000)
+  }
+
+  // Функция для двойного тапа
+  const handleDoubleTap = (e: React.TouchEvent | React.MouseEvent) => {
+    const now = Date.now()
+    const timeDiff = now - lastTap
+
+    if (timeDiff < 300 && timeDiff > 0) {
+      // Двойной тап обнаружен
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = ('touches' in e ? e.touches[0].clientX : e.clientX) - rect.left
+      const y = ('touches' in e ? e.touches[0].clientY : e.clientY) - rect.top
+
+      setHeartPosition({ x, y })
+      setShowHeartAnimation(true)
+
+      if (isShowingProducts && currentProduct) {
+        // Добавляем в вишлист
+        handleWishlistToggle(currentProduct)
+      } else if (shouldShowReview) {
+        // Ставим лайк на отзыв
+        handleLike()
+      }
+
+      setTimeout(() => setShowHeartAnimation(false), 1000)
+    }
+
+    setLastTap(now)
+  }
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const handleCopyReviewLink = (reviewUrl: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined') {
       navigator.clipboard.writeText(reviewUrl).then(() => {
         showNotification({
           type: 'success',
@@ -347,6 +587,13 @@ export default function MediaViewer({
           message: 'Не удалось скопировать ссылку'
         })
       })
+    }
+  }
+
+  const handleShareReview = () => {
+    if (review && review.id) {
+      const reviewUrl = `${window.location.origin}/product/${review.product_id}#review-${review.id}`
+      handleCopyReviewLink(reviewUrl)
     }
   }
 
@@ -369,9 +616,9 @@ export default function MediaViewer({
     return result
   }
 
-  const calculateDiscount = (oldPrice: number, newPrice: number) => {
-    if (oldPrice && newPrice && oldPrice > newPrice) {
-      return Math.round(((oldPrice - newPrice) / oldPrice) * 100)
+  const calculateDiscount = (originalPrice: number, newPrice: number) => {
+    if (originalPrice && newPrice && originalPrice > newPrice) {
+      return Math.round(((originalPrice - newPrice) / originalPrice) * 100)
     }
     return 0
   }
@@ -385,20 +632,6 @@ export default function MediaViewer({
   const prevMedia = () => {
     if (currentMediaIndex > 0) {
       setCurrentMediaIndex(prev => prev - 1)
-    }
-  }
-
-  const nextProductMedia = () => {
-    if (hasMultipleProductImages && currentProductMediaIndex < currentProductImages.length - 1) {
-      setCurrentProductMediaIndex(prev => prev + 1)
-      console.log('Следующее изображение товара:', currentProductMediaIndex + 1)
-    }
-  }
-
-  const prevProductMedia = () => {
-    if (hasMultipleProductImages && currentProductMediaIndex > 0) {
-      setCurrentProductMediaIndex(prev => prev - 1)
-      console.log('Предыдущее изображение товара:', currentProductMediaIndex - 1)
     }
   }
 
@@ -564,6 +797,26 @@ export default function MediaViewer({
                 </div>
               </div>
 
+              {/* Кнопка переключения режимов для тестирования */}
+              <button
+                onClick={() => {
+                  if (isShowingProducts) {
+                    setIsShowingProducts(false)
+                    // Возвращаемся к первому отзыву
+                    if (reviewsWithMedia.length > 0) {
+                      onReviewChange(0)
+                    }
+                  } else {
+                    setIsShowingProducts(true)
+                    setCurrentProductIndex(0)
+                  }
+                }}
+                className="absolute top-6 left-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
+                title="Переключить режим"
+              >
+                {isShowingProducts ? '📝' : '🛒'}
+              </button>
+
               {/* Прогресс-бар */}
               <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
                 <div className="bg-black/30 rounded-full h-1 w-32 overflow-hidden">
@@ -579,13 +832,56 @@ export default function MediaViewer({
               </div>
 
               {/* Основной контент */}
-              <div className="relative w-full h-full flex items-center justify-center p-4 bg-gray-900">
+              <div 
+                className="relative w-full h-full flex items-center justify-center p-4 bg-gray-900"
+                onTouchStart={handleDoubleTap}
+                onMouseDown={handleDoubleTap}
+                onClick={showVideoControls}
+              >
                 {isShowingProducts ? (
                   /* Показываем товар */
                   currentProduct && (
                     <>
+                      {/* Проверяем является ли текущее медиа видео */}
+                      {(() => {
+                        const currentMedia = currentProductImages[currentProductMediaIndex]
+                        const isVideo = currentProduct.video_url && currentProductMediaIndex === 0
+                        
+                        console.log('🎬 Рендер медиа товара:', {
+                          currentMedia,
+                          currentProductMediaIndex,
+                          isVideo,
+                          videoUrl: currentProduct.video_url,
+                          totalMedia: currentProductImages.length,
+                          currentProductImages,
+                          productName: currentProduct.name
+                        })
+                        
+                        if (isVideo) {
+                          console.log('✅ Рендерим видео товара')
+                          return (
+                            <div className="relative max-w-full max-h-full">
+                              <video
+                                ref={productVideoRef}
+                                src={currentMedia}
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                                autoPlay
+                                loop
+                                muted={isMuted}
+                                onTimeUpdate={handleVideoTimeUpdate}
+                                onLoadedMetadata={handleVideoTimeUpdate}
+                                onPlay={() => setIsPlaying(true)}
+                                onPause={() => setIsPlaying(false)}
+                                onEnded={() => setIsPlaying(false)}
+                                onClick={showVideoControls}
+                              />
+                            </div>
+                          )
+                        } else {
+                          console.log('🖼️ Рендерим изображение товара')
+                          return (
                       <motion.img
-                        src={currentProductImages.length > 0 ? currentProductImages[currentProductMediaIndex] : currentProduct.image_url}
+                              src={currentMedia}
                         alt={currentProduct.name}
                         className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                         drag="x"
@@ -600,22 +896,25 @@ export default function MediaViewer({
                           }
                         }}
                       />
+                          )
+                        }
+                      })()}
 
                       {/* Только индикатор скидки на изображении (без цены) */}
                       {(() => {
-                        const hasDiscount = currentProduct.old_price && currentProduct.old_price > currentProduct.price
+                        const hasDiscount = currentProduct.original_price && currentProduct.original_price > currentProduct.price
                         console.log('Discount indicator check:', {
                           productName: currentProduct.name,
-                          old_price: currentProduct.old_price,
+                          original_price: currentProduct.original_price,
                           price: currentProduct.price,
                           hasDiscount,
-                          discount: hasDiscount ? calculateDiscount(currentProduct.old_price, currentProduct.price) : null
+                          discount: hasDiscount ? calculateDiscount(currentProduct.original_price, currentProduct.price) : null
                         })
                         return hasDiscount // Показываем только если есть реальная скидка
                       })() && (
                         <div className="absolute top-6 left-6 z-20">
                           <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                            -{calculateDiscount(currentProduct.old_price, currentProduct.price)}%
+                            -{calculateDiscount(currentProduct.original_price, currentProduct.price)}%
                           </div>
                         </div>
                       )}
@@ -648,15 +947,28 @@ export default function MediaViewer({
 
                       {/* Индикатор фото товара */}
                       {hasMultipleProductImages && (
-                        <div className="absolute bottom-40 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
-                          {currentProductImages.map((image: any, index: number) => (
+                        <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                          {currentProductImages.map((media: any, index: number) => {
+                            const isVideo = currentProduct.video_url && index === 0
+                            console.log(`🔍 Индикатор медиа ${index}:`, {
+                              media,
+                              isVideo,
+                              videoUrl: currentProduct.video_url
+                            })
+                            return (
                             <div
                               key={index}
                               className={`w-2 h-2 rounded-full transition-colors ${
                                 index === currentProductMediaIndex ? 'bg-white' : 'bg-white/50'
                               }`}
-                            />
-                          ))}
+                                title={isVideo ? 'Видео' : 'Фото'}
+                              >
+                                {isVideo && index === currentProductMediaIndex && (
+                                  <div className="w-full h-full bg-red-500 rounded-full animate-pulse" />
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </>
@@ -672,15 +984,70 @@ export default function MediaViewer({
                           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                         />
                       ) : (
+                        <div className="relative max-w-full max-h-full">
                         <video
                           ref={videoRef}
                           src={currentMedia.media_url}
                           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                          controls
                           autoPlay
                           loop
-                          muted
-                        />
+                            muted={isMuted}
+                            onTimeUpdate={handleVideoTimeUpdate}
+                            onLoadedMetadata={handleVideoTimeUpdate}
+                            onPlay={() => setIsPlaying(true)}
+                            onPause={() => setIsPlaying(false)}
+                            onEnded={() => setIsPlaying(false)}
+                            onClick={showVideoControls}
+                          />
+                          
+                          {/* Кастомный плеер для отзывов - всегда показываем */}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+                            {/* Прогресс-бар */}
+                            <div 
+                              className="w-full h-2 bg-white/30 rounded-full cursor-pointer mb-3"
+                              onClick={handleVideoSeek}
+                            >
+                              <div 
+                                className="h-full bg-white rounded-full transition-all duration-100"
+                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                              />
+                            </div>
+                            
+                            {/* Контролы */}
+                            <div className="flex items-center justify-between text-white">
+                              <div className="flex items-center space-x-4">
+                                {/* Кнопка Play/Pause */}
+                                <button
+                                  onClick={handleVideoPlay}
+                                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                                >
+                                  {isPlaying ? (
+                                    <Pause className="w-5 h-5" />
+                                  ) : (
+                                    <Play className="w-5 h-5" />
+                                  )}
+                                </button>
+                                
+                                {/* Кнопка Mute */}
+                                <button
+                                  onClick={handleVideoMute}
+                                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                                >
+                                  {isMuted ? (
+                                    <VolumeX className="w-5 h-5" />
+                                  ) : (
+                                    <Volume2 className="w-5 h-5" />
+                                  )}
+                                </button>
+                                
+                                {/* Тайминг */}
+                                <span className="text-sm">
+                                  {formatTime(currentTime)} / {formatTime(duration)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       )}
 
                       {/* Навигация по медиа отзыва */}
@@ -711,7 +1078,7 @@ export default function MediaViewer({
 
                       {/* Индикатор медиа отзыва */}
                       {allMedia.length > 1 && (
-                        <div className="absolute bottom-40 left-1/2 transform -translate-x-1/2 flex gap-2">
+                        <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2">
                           {allMedia.map((_, index) => (
                             <div
                               key={index}
@@ -735,47 +1102,113 @@ export default function MediaViewer({
                     <>
                       {/* Цены и скидка */}
                       <div className="mb-4">
-                        {(() => {
-                          const hasDiscount = currentProduct.old_price && currentProduct.old_price > currentProduct.price
-                          const actualDiscount = hasDiscount 
-                            ? calculateDiscount(currentProduct.old_price, currentProduct.price)
-                            : null
-                          
-                          console.log('Product discount calculation:', {
-                            name: currentProduct.name,
-                            price: currentProduct.price,
-                            old_price: currentProduct.old_price,
-                            hasDiscount,
-                            actualDiscount
-                          })
-                          
-                          return hasDiscount // Показываем только если есть реальная скидка
-                        })() && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-white/70 text-sm line-through">
-                              {currentProduct.old_price} MDL
-                            </span>
-                            <span className="text-red-400 text-sm font-medium bg-red-900/30 px-2 py-1 rounded">
-                              -{calculateDiscount(currentProduct.old_price, currentProduct.price)}%
-                            </span>
+                        {currentProduct.original_price && currentProduct.original_price > currentProduct.price && (
+                          <>
+                            {/* Скидка сверху */}
+                            <div className="mb-2">
+                              <span className="text-red-400 text-sm font-medium bg-red-900/30 px-3 py-1 rounded-full">
+                                -{Math.round(((currentProduct.original_price - currentProduct.price) / currentProduct.original_price) * 100)}%
+                              </span>
+                            </div>
+                            {/* Перечеркнутая цена выше новой */}
+                            <div className="mb-2">
+                              <span className="text-white/70 text-lg line-through">
+                                {currentProduct.original_price} MDL
+                              </span>
+                            </div>
+                            {/* Новая цена */}
+                            <div>
+                              <p className="text-white font-bold text-2xl">
+                                {currentProduct.price} MDL
+                              </p>
+                            </div>
+                          </>
+                        )}
+                        {(!currentProduct.original_price || currentProduct.original_price <= currentProduct.price) && (
+                          <div>
+                            <p className="text-white font-bold text-2xl">
+                              {currentProduct.price} MDL
+                            </p>
                           </div>
                         )}
-                        <p className="text-white font-bold text-2xl">
-                          {currentProduct.price} MDL
-                        </p>
                       </div>
 
                       {/* Название и бренд товара */}
                       <div className="mb-4">
-                        <p className="text-white font-semibold text-lg">
+                        <div className="relative">
+                          <p className="text-white font-semibold text-lg line-clamp-2 pr-20">
                           {currentProduct.name}
                         </p>
+                          {currentProduct.name.length > 50 && (
+                            <button
+                              onClick={() => setShowFullProductName(!showFullProductName)}
+                              className="absolute top-6 right-0 text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                            >
+                              {showFullProductName ? 'Скрыть' : 'Показать'}
+                            </button>
+                          )}
+                          {showFullProductName && (
+                            <p className="text-white font-semibold text-lg mt-2">
+                              {currentProduct.name}
+                            </p>
+                          )}
+                        </div>
                         {currentProduct.brand && (
                           <p className="text-white/70 text-sm">
                             {currentProduct.brand}
                           </p>
                         )}
                       </div>
+
+                      {/* Кастомный плеер для видео товара */}
+                      {currentProduct.video_url && (
+                        <div className="mt-4">
+                          {/* Прогресс-бар */}
+                          <div 
+                            className="w-full h-2 bg-white/30 rounded-full cursor-pointer mb-3"
+                            onClick={handleVideoSeek}
+                          >
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-100"
+                              style={{ width: `${(currentTime / duration) * 100}%` }}
+                            />
+                          </div>
+                          
+                          {/* Контролы */}
+                          <div className="flex items-center justify-between text-white">
+                            <div className="flex items-center space-x-4">
+                              {/* Кнопка Play/Pause */}
+                              <button
+                                onClick={handleVideoPlay}
+                                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                              >
+                                {isPlaying ? (
+                                  <Pause className="w-5 h-5" />
+                                ) : (
+                                  <Play className="w-5 h-5" />
+                                )}
+                              </button>
+                              
+                              {/* Кнопка Mute */}
+                              <button
+                                onClick={handleVideoMute}
+                                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                              >
+                                {isMuted ? (
+                                  <VolumeX className="w-5 h-5" />
+                                ) : (
+                                  <Volume2 className="w-5 h-5" />
+                                )}
+                              </button>
+                              
+                              {/* Тайминг */}
+                              <span className="text-sm">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )
                 ) : (
@@ -834,7 +1267,7 @@ export default function MediaViewer({
 
               {/* Кнопки действий справа - TikTok стиль с улучшенной видимостью */}
               <div 
-                className="absolute right-2 bottom-32 flex flex-col items-center gap-4 pr-1 z-30"
+                className="absolute right-2 bottom-64 flex flex-col items-center gap-4 pr-1 z-30"
                 data-action-buttons="true"
                 data-no-drag="true"
                 onPointerDown={(e) => {
@@ -1071,6 +1504,26 @@ export default function MediaViewer({
                 </p>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Анимация сердца для двойных тапов */}
+      <AnimatePresence>
+        {showHeartAnimation && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed z-70 pointer-events-none"
+            style={{
+              left: heartPosition.x,
+              top: heartPosition.y,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <Heart className="w-16 h-16 text-red-500 fill-current drop-shadow-lg" />
           </motion.div>
         )}
       </AnimatePresence>

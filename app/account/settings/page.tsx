@@ -84,81 +84,75 @@ export default function SettingsPage() {
               Приложение
             </h2>
             
-            <div className="space-y-4">
-              {isInstalled ? (
-                /* Если уже установлено */
-                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
-                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-green-900 dark:text-green-100">
-                        Приложение установлено
-                      </p>
-                      <p className="text-sm text-green-700 dark:text-green-300">
-                        Вы используете Smarto как приложение
-                      </p>
-                    </div>
-                  </div>
+            {isInstalled ? (
+              /* Если уже установлено */
+              <div className="flex items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                  <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
-              ) : canInstall ? (
-                /* Если можно установить */
-                <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
-                      <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">
-                        Установить приложение
-                      </p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Быстрый доступ с экрана устройства
-                      </p>
-                    </div>
+                <div className="ml-3">
+                  <p className="font-medium text-green-900 dark:text-green-100">
+                    Приложение установлено
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Вы используете Smarto как приложение
+                  </p>
+                </div>
+              </div>
+            ) : canInstall ? (
+              /* Если можно установить - стиль App Store */
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
+                <div className="flex items-center space-x-3">
+                  {/* Логотип приложения */}
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg flex items-center justify-center">
+                    <span className="text-white text-lg font-bold">S</span>
                   </div>
+                  
+                  {/* Информация о приложении */}
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      Smarto
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Установить приложение
+                    </p>
+                  </div>
+                  
+                  {/* Кнопка установки */}
                   <motion.button
                     onClick={showInstallPrompt}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
                   >
                     <Download className="h-4 w-4" />
                     <span>Установить</span>
                   </motion.button>
                 </div>
-              ) : (
-                /* Если нельзя установить */
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <Smartphone className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">
-                        Установка недоступна
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Ваш браузер не поддерживает установку
-                      </p>
-                    </div>
-                  </div>
+                
+                {/* Инструкция для iOS */}
+                <div className="mt-3 p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <p className="text-xs text-blue-800 dark:text-blue-200 text-center">
+                    На iPhone: "Поделиться" → "На экран «Домой»"
+                  </p>
                 </div>
-              )}
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Преимущества приложения:
-              </h3>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <li>• Быстрый запуск с экрана устройства</li>
-                <li>• Работает без интернета (офлайн режим)</li>
-                <li>• Нативный интерфейс и плавная работа</li>
-                <li>• Автоматические обновления</li>
-              </ul>
-            </div>
+              </div>
+            ) : (
+              /* Если нельзя установить */
+              <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    Установка недоступна
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Ваш браузер не поддерживает установку
+                  </p>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </main>

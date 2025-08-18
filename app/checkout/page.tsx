@@ -76,6 +76,14 @@ export default function CheckoutPage() {
     notes: ''
   })
 
+  // Состояния для валидации полей карты
+  const [cardValidation, setCardValidation] = useState({
+    card_number: { isValid: true, message: '' },
+    card_holder: { isValid: true, message: '' },
+    card_expiry: { isValid: true, message: '' },
+    card_cvv: { isValid: true, message: '' }
+  })
+
   // Получаем баллы и выбранные товары из sessionStorage
   useEffect(() => {
     const savedPoints = sessionStorage.getItem('loyaltyPointsToUse')
@@ -194,8 +202,110 @@ export default function CheckoutPage() {
   const totalBeforePoints = subtotal + shipping
   const finalTotal = Math.max(0, totalBeforePoints - pointsToUse) // Общая сумма к оплате
 
+  // Функция для валидации полей карты в реальном времени
+  const validateCardField = (field: keyof typeof cardValidation, value: string) => {
+    let isValid = true
+    let message = ''
+
+    switch (field) {
+      case 'card_number':
+        const cleanNumber = value.replace(/\s/g, '')
+        if (cleanNumber.length === 0) {
+          isValid = false
+          message = 'Номер карты обязателен'
+        } else if (cleanNumber.length < 16) {
+          isValid = false
+          message = 'Номер карты должен содержать 16 цифр'
+        } else if (!/^\d{16}$/.test(cleanNumber)) {
+          isValid = false
+          message = 'Номер карты должен содержать только цифры'
+        }
+        break
+      
+      case 'card_holder':
+        if (value.trim().length === 0) {
+          isValid = false
+          message = 'Имя владельца обязательно'
+        } else if (value.trim().length < 2) {
+          isValid = false
+          message = 'Имя владельца должно содержать минимум 2 символа'
+        }
+        break
+      
+      case 'card_expiry':
+        if (value.length === 0) {
+          isValid = false
+          message = 'Срок действия обязателен'
+        } else if (!/^\d{2}\/\d{2}$/.test(value)) {
+          isValid = false
+          message = 'Формат: MM/YY'
+        } else {
+          const [month, year] = value.split('/')
+          const monthNum = parseInt(month)
+          const yearNum = parseInt(year)
+          const currentYear = new Date().getFullYear() % 100
+          const currentMonth = new Date().getMonth() + 1
+          
+          if (monthNum < 1 || monthNum > 12) {
+            isValid = false
+            message = 'Месяц должен быть от 01 до 12'
+          } else if (yearNum < currentYear || (yearNum === currentYear && monthNum < currentMonth)) {
+            isValid = false
+            message = 'Срок действия карты истек'
+          }
+        }
+        break
+      
+      case 'card_cvv':
+        if (value.length === 0) {
+          isValid = false
+          message = 'CVV код обязателен'
+        } else if (value.length < 3) {
+          isValid = false
+          message = 'CVV код должен содержать 3-4 цифры'
+        } else if (!/^\d{3,4}$/.test(value)) {
+          isValid = false
+          message = 'CVV код должен содержать только цифры'
+        }
+        break
+    }
+
+    setCardValidation(prev => ({
+      ...prev,
+      [field]: { isValid, message }
+    }))
+
+    return isValid
+  }
+
+  // Обновленная функция handleInputChange с валидацией
   const handleInputChange = (field: keyof CheckoutForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
+    
+    // Валидируем поля карты в реальном времени
+    if (['card_number', 'card_holder', 'card_expiry', 'card_cvv'].includes(field)) {
+      validateCardField(field as keyof typeof cardValidation, value)
+    }
+    
+    // Если меняется способ оплаты, сбрасываем валидацию карты
+    if (field === 'payment_method') {
+      if (value === 'cash') {
+        setCardValidation({
+          card_number: { isValid: true, message: '' },
+          card_holder: { isValid: true, message: '' },
+          card_expiry: { isValid: true, message: '' },
+          card_cvv: { isValid: true, message: '' }
+        })
+        // Очищаем поля карты при выборе наличных
+        setForm(prev => ({
+          ...prev,
+          card_number: '',
+          card_holder: '',
+          card_expiry: '',
+          card_cvv: ''
+        }))
+      }
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -205,20 +315,14 @@ export default function CheckoutPage() {
     
     // Валидация полей карты, если выбран способ оплаты картой
     if (form.payment_method === 'card') {
-      if (!form.card_number.replace(/\s/g, '').match(/^\d{16}$/)) {
-        alert('Введите корректный номер карты (16 цифр)')
-        return
-      }
-      if (!form.card_holder.trim()) {
-        alert('Введите имя владельца карты')
-        return
-      }
-      if (!form.card_expiry.match(/^\d{2}\/\d{2}$/)) {
-        alert('Введите корректный срок действия карты (MM/YY)')
-        return
-      }
-      if (!form.card_cvv.match(/^\d{3,4}$/)) {
-        alert('Введите корректный CVV/CVC код')
+      // Проверяем все поля карты
+      const isCardNumberValid = validateCardField('card_number', form.card_number)
+      const isCardHolderValid = validateCardField('card_holder', form.card_holder)
+      const isCardExpiryValid = validateCardField('card_expiry', form.card_expiry)
+      const isCardCvvValid = validateCardField('card_cvv', form.card_cvv)
+      
+      if (!isCardNumberValid || !isCardHolderValid || !isCardExpiryValid || !isCardCvvValid) {
+        alert('Пожалуйста, исправьте ошибки в данных карты')
         return
       }
     }
@@ -835,60 +939,128 @@ export default function CheckoutPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <CreditCard className="h-4 w-4 mr-2" />
                     Номер карты *
                   </label>
                   <input
                     type="text"
                     required
                     value={form.card_number}
-                    onChange={(e) => handleInputChange('card_number', e.target.value)}
+                    onChange={(e) => {
+                      // Форматирование номера карты: XXXX XXXX XXXX XXXX
+                      const value = e.target.value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim()
+                      if (value.length <= 19) { // 16 цифр + 3 пробела
+                        handleInputChange('card_number', value)
+                      }
+                    }}
                     placeholder="1234 5678 9012 3456"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    maxLength={19}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                      cardValidation.card_number.isValid 
+                        ? 'border-gray-300 dark:border-gray-600' 
+                        : 'border-red-500 dark:border-red-400'
+                    }`}
                   />
+                  {!cardValidation.card_number.isValid && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {cardValidation.card_number.message}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <User className="h-4 w-4 mr-2" />
                     Владелец карты *
                   </label>
                   <input
                     type="text"
                     required
                     value={form.card_holder}
-                    onChange={(e) => handleInputChange('card_holder', e.target.value)}
+                    onChange={(e) => handleInputChange('card_holder', e.target.value.toUpperCase())}
                     placeholder="IVAN IVANOV"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      cardValidation.card_holder.isValid 
+                        ? 'border-gray-300 dark:border-gray-600' 
+                        : 'border-red-500 dark:border-red-400'
+                    }`}
                   />
+                  {!cardValidation.card_holder.isValid && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {cardValidation.card_holder.message}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                      <Package className="h-4 w-4 mr-2" />
                       Срок действия *
                     </label>
                     <input
                       type="text"
                       required
                       value={form.card_expiry}
-                      onChange={(e) => handleInputChange('card_expiry', e.target.value)}
-                      placeholder="12/25"
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      onChange={(e) => {
+                        // Форматирование: MM/YY
+                        const value = e.target.value.replace(/\D/g, '')
+                        if (value.length <= 4) {
+                          const formatted = value.replace(/(\d{2})(\d{0,2})/, '$1/$2')
+                          handleInputChange('card_expiry', formatted)
+                        }
+                      }}
+                      placeholder="MM/YY"
+                      maxLength={5}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                        cardValidation.card_expiry.isValid 
+                          ? 'border-gray-300 dark:border-gray-600' 
+                          : 'border-red-500 dark:border-red-400'
+                      }`}
                     />
+                    {!cardValidation.card_expiry.isValid && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {cardValidation.card_expiry.message}
+                      </p>
+                    )}
                   </div>
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
                       CVV *
                     </label>
                     <input
                       type="text"
                       required
                       value={form.card_cvv}
-                      onChange={(e) => handleInputChange('card_cvv', e.target.value)}
+                      onChange={(e) => {
+                        // Только цифры, максимум 4 символа
+                        const value = e.target.value.replace(/\D/g, '')
+                        if (value.length <= 4) {
+                          handleInputChange('card_cvv', value)
+                        }
+                      }}
                       placeholder="123"
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      maxLength={4}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                        cardValidation.card_cvv.isValid 
+                          ? 'border-gray-300 dark:border-gray-600' 
+                          : 'border-red-500 dark:border-red-400'
+                      }`}
                     />
+                    {!cardValidation.card_cvv.isValid && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {cardValidation.card_cvv.message}
+                      </p>
+                    )}
                   </div>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Lock className="h-4 w-4" />
+                  <span>Ваши данные защищены SSL-шифрованием</span>
                 </div>
               </div>
             </motion.div>
@@ -1355,7 +1527,8 @@ export default function CheckoutPage() {
                   </h3>
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                        <CreditCard className="h-4 w-4 mr-2" />
                         Номер карты *
                       </label>
                       <input
@@ -1371,12 +1544,22 @@ export default function CheckoutPage() {
                         }}
                         placeholder="1234 5678 9012 3456"
                         maxLength={19}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                          cardValidation.card_number.isValid 
+                            ? 'border-gray-300 dark:border-gray-600' 
+                            : 'border-red-500 dark:border-red-400'
+                        }`}
                       />
+                      {!cardValidation.card_number.isValid && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                          {cardValidation.card_number.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                        <User className="h-4 w-4 mr-2" />
                         Владелец карты *
                       </label>
                       <input
@@ -1385,13 +1568,23 @@ export default function CheckoutPage() {
                         value={form.card_holder}
                         onChange={(e) => handleInputChange('card_holder', e.target.value.toUpperCase())}
                         placeholder="IVAN IVANOV"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                          cardValidation.card_holder.isValid 
+                            ? 'border-gray-300 dark:border-gray-600' 
+                            : 'border-red-500 dark:border-red-400'
+                        }`}
                       />
+                      {!cardValidation.card_holder.isValid && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                          {cardValidation.card_holder.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                          <Package className="h-4 w-4 mr-2" />
                           Срок действия *
                         </label>
                         <input
@@ -1408,13 +1601,23 @@ export default function CheckoutPage() {
                           }}
                           placeholder="MM/YY"
                           maxLength={5}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                            cardValidation.card_expiry.isValid 
+                              ? 'border-gray-300 dark:border-gray-600' 
+                              : 'border-red-500 dark:border-red-400'
+                          }`}
                         />
+                        {!cardValidation.card_expiry.isValid && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {cardValidation.card_expiry.message}
+                          </p>
+                        )}
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          CVV/CVC *
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                          <Shield className="h-4 w-4 mr-2" />
+                          CVV *
                         </label>
                         <input
                           type="text"
@@ -1429,8 +1632,17 @@ export default function CheckoutPage() {
                           }}
                           placeholder="123"
                           maxLength={4}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono ${
+                            cardValidation.card_cvv.isValid 
+                              ? 'border-gray-300 dark:border-gray-600' 
+                              : 'border-red-500 dark:border-red-400'
+                          }`}
                         />
+                        {!cardValidation.card_cvv.isValid && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {cardValidation.card_cvv.message}
+                          </p>
+                        )}
                       </div>
                     </div>
                     

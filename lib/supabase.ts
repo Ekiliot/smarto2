@@ -19,6 +19,7 @@ export interface Product {
   original_price?: number
   image_url: string
   images: string[]
+  video_url?: string
   category_id: string
   brand: string
   in_stock: boolean
@@ -154,6 +155,7 @@ export const updateProduct = async (id: string, product: Partial<{
   original_price: number
   image_url: string
   images: string[]
+  video_url?: string
   category_id: string
   brand: string
   in_stock: boolean
@@ -235,6 +237,68 @@ export const getAllProducts = async () => {
   return { data, error }
 }
 
+// Функция для получения товаров с рейтингами и количеством отзывов
+export const getAllProductsWithRatings = async () => {
+  // Сначала получаем все товары
+  const { data: products, error: productsError } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories (
+        id,
+        name
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  if (productsError) return { data: null, error: productsError }
+
+  // Получаем рейтинги и количество отзывов для каждого товара
+  const productsWithRatings = await Promise.all(
+    (products || []).map(async (product) => {
+      // Получаем отзывы для товара
+      const { data: reviews } = await supabase
+        .from('product_reviews')
+        .select('rating')
+        .eq('product_id', product.id)
+
+      // Вычисляем средний рейтинг
+      let rating = 0
+      let reviews_count = 0
+
+      if (reviews && reviews.length > 0) {
+        reviews_count = reviews.length
+        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+        rating = Math.round((totalRating / reviews_count) * 10) / 10 // Округляем до 1 знака после запятой
+      }
+
+      return {
+        ...product,
+        rating,
+        reviews_count
+      }
+    })
+  )
+
+  return { data: productsWithRatings, error: null }
+}
+
+export const getProduct = async (id: string) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories (
+        id,
+        name
+      )
+    `)
+    .eq('id', id)
+    .single()
+  
+  return { data, error }
+}
+
 export const getAllCategories = async () => {
   console.log('Fetching categories...')
   
@@ -280,6 +344,32 @@ export const uploadProductImage = async (file: File, productId: string) => {
   // Получаем публичный URL
   const { data: { publicUrl } } = supabase.storage
     .from('product-images')
+    .getPublicUrl(filePath)
+
+  return { data: publicUrl, error: null }
+}
+
+export const uploadProductVideo = async (file: File, productId: string) => {
+  const fileExt = file.name.split('.').pop()
+  const timestamp = Date.now()
+  const randomId = Math.random().toString(36).substring(2, 15)
+  const fileName = `${productId}-${timestamp}-${randomId}.${fileExt}`
+  const filePath = `products/${productId}/videos/${fileName}`
+
+  const { data, error } = await supabase.storage
+    .from('product-videos')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false
+    })
+
+  if (error) {
+    return { data: null, error }
+  }
+
+  // Получаем публичный URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('product-videos')
     .getPublicUrl(filePath)
 
   return { data: publicUrl, error: null }
@@ -705,7 +795,7 @@ export const createOrder = async (orderData: {
     unit_price: number
   }>
 }) => {
-  // Создаем заказ
+  // Начинаем транзакцию
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -737,6 +827,24 @@ export const createOrder = async (orderData: {
     .insert(orderItems)
 
   if (itemsError) return { error: itemsError }
+
+  // Обновляем количество товаров на складе
+  for (const item of orderData.items) {
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({ 
+        stock_quantity: supabase.rpc('decrease_stock_quantity', {
+          product_id: item.product_id,
+          decrease_amount: item.quantity
+        })
+      })
+      .eq('id', item.product_id)
+
+    if (updateError) {
+      console.error(`Error updating stock for product ${item.product_id}:`, updateError)
+      // Можно добавить логирование ошибок, но не прерывать создание заказа
+    }
+  }
 
   return { data: order, error: null }
 }
@@ -794,6 +902,45 @@ export const getOrderById = async (orderId: string) => {
     .single()
 
   return { data, error }
+}
+
+// Функция для отмены заказа (возвращает товары на склад)
+export const cancelOrder = async (orderId: string) => {
+  // Получаем информацию о заказе
+  const { data: order, error: orderError } = await getOrderById(orderId)
+  if (orderError) return { error: orderError }
+
+  // Обновляем статус заказа
+  const { error: updateError } = await supabase
+    .from('orders')
+    .update({ 
+      status: 'cancelled',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', orderId)
+
+  if (updateError) return { error: updateError }
+
+  // Возвращаем товары на склад
+  if (order.order_items) {
+    for (const item of order.order_items) {
+      const { error: stockError } = await supabase
+        .from('products')
+        .update({ 
+          stock_quantity: supabase.rpc('increase_stock_quantity', {
+            product_id: item.product_id,
+            increase_amount: item.quantity
+          })
+        })
+        .eq('id', item.product_id)
+
+      if (stockError) {
+        console.error(`Error returning stock for product ${item.product_id}:`, stockError)
+      }
+    }
+  }
+
+  return { data: order, error: null }
 }
 
 export const updateOrderStatus = async (orderId: string, status: Order['status']) => {

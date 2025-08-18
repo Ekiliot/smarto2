@@ -405,26 +405,31 @@ export default function CartPage() {
               
               <div className="space-y-3">
                 {activeShippingMethods.map((method) => (
-                  <div
+                  <motion.div
                     key={method.id}
-                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                    className={`p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer hover:shadow-lg active:scale-95 ${
                       selectedShippingMethod === method.id
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-lg'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-300 dark:hover:border-primary-600'
                     }`}
                     onClick={() => setSelectedShippingMethod(method.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
-                          <input
-                            type="radio"
-                            name="shipping"
-                            checked={selectedShippingMethod === method.id}
-                            onChange={() => setSelectedShippingMethod(method.id)}
-                            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
-                          />
-                          <div>
+                          {/* Убираем radio button для лучшего UX на мобильных */}
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            selectedShippingMethod === method.id
+                              ? 'border-primary-500 bg-primary-500'
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {selectedShippingMethod === method.id && (
+                              <div className="w-2 h-2 bg-white rounded-full" />
+                            )}
+                          </div>
+                          <div className="flex-1">
                             <h4 className="font-medium text-gray-900 dark:text-white">
                               {method.name}
                             </h4>
@@ -437,7 +442,7 @@ export default function CartPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-4">
                         {subtotal >= method.free_shipping_threshold ? (
                           <div className="text-green-600 font-semibold text-sm">
                             Бесплатно
@@ -454,7 +459,7 @@ export default function CartPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>
@@ -1297,24 +1302,29 @@ export default function CartPage() {
                 </h3>
                 <div className="space-y-3">
                   {activeShippingMethods.map((method) => (
-                    <div
+                    <motion.div
                       key={method.id}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer hover:shadow-lg active:scale-95 ${
                         selectedShippingMethod === method.id
-                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-lg'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-300 dark:hover:border-primary-600'
                       }`}
                       onClick={() => setSelectedShippingMethod(method.id)}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <input
-                            type="radio"
-                            name="shipping"
-                            checked={selectedShippingMethod === method.id}
-                            onChange={() => setSelectedShippingMethod(method.id)}
-                            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500"
-                          />
+                          {/* Кастомный radio button для лучшего UX */}
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            selectedShippingMethod === method.id
+                              ? 'border-primary-500 bg-primary-500'
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {selectedShippingMethod === method.id && (
+                              <div className="w-2 h-2 bg-white rounded-full" />
+                            )}
+                          </div>
                           <div>
                             <h4 className="font-medium text-gray-900 dark:text-white">
                               {method.name}
@@ -1344,7 +1354,7 @@ export default function CartPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

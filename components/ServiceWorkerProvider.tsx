@@ -23,13 +23,40 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
 
   const [showCacheInfo, setShowCacheInfo] = useState(false)
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
-  // Показываем промпт для обновления
+  // Проверяем, является ли устройство мобильным
   useEffect(() => {
-    if (updateInfo.hasUpdate && !updateInfo.isUpdating) {
-      setShowUpdatePrompt(true)
+    const checkMobile = () => {
+      const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'
+      const mobile = isBrowser && (window.matchMedia('(max-width: 768px)').matches || 
+                    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+      setIsMobile(!!mobile)
     }
-  }, [updateInfo.hasUpdate, updateInfo.isUpdating])
+    
+    checkMobile()
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile)
+      return () => window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
+
+  // Показываем промпт для обновления только на мобильных устройствах
+  useEffect(() => {
+    if (updateInfo.hasUpdate && !updateInfo.isUpdating && isMobile) {
+      setShowUpdatePrompt(true)
+    } else if (updateInfo.hasUpdate && !isMobile) {
+      // На веб-версии просто скрываем промпт
+      setShowUpdatePrompt(false)
+    }
+  }, [updateInfo.hasUpdate, updateInfo.isUpdating, isMobile])
+
+  // Скрываем промпт обновления на веб-версии
+  useEffect(() => {
+    if (!isMobile) {
+      setShowUpdatePrompt(false)
+    }
+  }, [isMobile])
 
   // Автоматически обновляем информацию о кеше
   useEffect(() => {
@@ -102,9 +129,9 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
         </AnimatePresence>
       </div>
 
-      {/* Промпт обновления */}
+      {/* Промпт обновления - только для мобильных устройств */}
       <AnimatePresence>
-        {showUpdatePrompt && (
+        {showUpdatePrompt && isMobile && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -154,6 +181,8 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
           </motion.div>
         )}
       </AnimatePresence>
+
+
 
       {/* Кнопка информации о кеше (только в development) */}
       {process.env.NODE_ENV === 'development' && isActive && (

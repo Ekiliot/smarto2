@@ -78,7 +78,7 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden product-card">
+    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden product-card cursor-pointer hover:shadow-xl transition-all duration-200">
       <div className="p-3">
         <div className="relative aspect-square bg-gray-200 dark:bg-gray-700 rounded-2xl overflow-hidden">
                 {product.image_url ? (

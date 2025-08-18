@@ -3,551 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smarto2 - Нет интернета</title>
+    <title>Нет подключения к интернету</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            color: #333;
+            color: white;
         }
         
-        .offline-container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
+        .container {
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            max-width: 450px;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
+            max-width: 500px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
-        .offline-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-        
-        .offline-icon {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 25px;
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-            position: relative;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        .status-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #ef4444;
-            animation: blink 1.5s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
         }
         
         h1 {
-            color: #1f2937;
-            margin-bottom: 15px;
-            font-size: 28px;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
             font-weight: 700;
         }
         
-        .subtitle {
-            color: #6b7280;
-            margin-bottom: 25px;
-            font-size: 16px;
+        .message {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
             line-height: 1.6;
         }
         
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 30px;
-        }
-        
-        .connection-status.online {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-        
-        .retry-button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .retry-btn {
+            background: rgba(255, 255, 255, 0.2);
             color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
+            backdrop-filter: blur(10px);
         }
         
-        .retry-button:hover {
+        .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .retry-button:active {
-            transform: translateY(0);
-        }
-        
-        .retry-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .retry-button .spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .retry-button.loading .spinner {
-            display: inline-block;
-        }
-        
-        .cached-pages {
-            margin-top: 35px;
-            padding-top: 25px;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .cached-pages h3 {
-            color: #374151;
-            margin-bottom: 20px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .cached-links {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        
-        .cached-link {
-            color: #667eea;
-            text-decoration: none;
-            padding: 12px 16px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            font-weight: 500;
-            position: relative;
-        }
-        
-        .cached-link:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
         .tips {
-            margin-top: 25px;
+            margin-top: 30px;
             padding: 20px;
-            background: #f8fafc;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            text-align: left;
         }
         
-        .tips h4 {
-            color: #374151;
-            margin-bottom: 12px;
-            font-size: 16px;
-            font-weight: 600;
+        .tips h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
         }
         
         .tips ul {
-            text-align: left;
-            color: #6b7280;
-            font-size: 14px;
-            line-height: 1.6;
+            margin: 0;
+            padding-left: 20px;
         }
         
         .tips li {
             margin-bottom: 8px;
-            list-style: none;
-            position: relative;
-            padding-left: 20px;
+            opacity: 0.9;
         }
         
-        .tips li::before {
-            content: '💡';
-            position: absolute;
-            left: 0;
-        }
-        
-        .cache-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fffbeb;
-            border-radius: 10px;
-            border: 1px solid #fed7aa;
-        }
-        
-        .cache-info h4 {
-            color: #92400e;
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        
-        .cache-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            text-align: center;
-        }
-        
-        .cache-stat {
-            color: #92400e;
-            font-size: 12px;
-        }
-        
-        .cache-stat .number {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-        
-        @media (max-width: 480px) {
-            .offline-container {
+        @media (max-width: 768px) {
+            .container {
                 padding: 30px 20px;
+                margin: 20px;
             }
             
             h1 {
-                font-size: 24px;
+                font-size: 2rem;
             }
             
-            .cached-links {
-                grid-template-columns: 1fr;
-            }
-            
-            .cache-stats {
-                grid-template-columns: 1fr;
-                gap: 8px;
+            .message {
+                font-size: 1.1rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="offline-container">
-        <div class="status-indicator" id="statusIndicator"></div>
-        <div class="offline-icon" id="offlineIcon">📱</div>
-        <h1 id="pageTitle">Нет интернета</h1>
-        
-        <div class="connection-status" id="connectionStatus">
-            <span id="statusIcon">🔴</span>
-            <span id="statusText">Соединение потеряно</span>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Нет подключения к интернету</h1>
+        <div class="message">
+            Похоже, что у вас нет подключения к интернету. 
+            Проверьте подключение к Wi-Fi или мобильной сети.
         </div>
         
-        <p class="subtitle" id="pageSubtitle">
-            Проверьте подключение к интернету и попробуйте снова. 
-            Некоторые страницы доступны в офлайн режиме.
-        </p>
-        
-        <button class="retry-button" id="retryButton" onclick="handleRetry()">
-            <div class="spinner"></div>
-            <span id="retryText">Попробовать снова</span>
+        <button class="retry-btn" onclick="window.location.reload()">
+            Попробовать снова
         </button>
         
-        <div class="cached-pages">
-            <h3>📚 Доступные страницы в кеше</h3>
-            <div class="cached-links" id="cachedLinks">
-                <a href="/" class="cached-link">🏠 Главная</a>
-                <a href="/products" class="cached-link">🛍️ Товары</a>
-                <a href="/cart" class="cached-link">🛒 Корзина</a>
-                <a href="/wishlist" class="cached-link">❤️ Избранное</a>
-                <a href="/account" class="cached-link">👤 Аккаунт</a>
-                <a href="/login" class="cached-link">🔐 Вход</a>
-            </div>
-        </div>
-        
-        <div class="cache-info" id="cacheInfo">
-            <h4>📊 Информация о кеше</h4>
-            <div class="cache-stats">
-                <div class="cache-stat">
-                    <span class="number" id="cachedPages">-</span>
-                    <span>Страниц</span>
-                </div>
-                <div class="cache-stat">
-                    <span class="number" id="cachedImages">-</span>
-                    <span>Изображений</span>
-                </div>
-                <div class="cache-stat">
-                    <span class="number" id="cacheSize">-</span>
-                    <span>Размер</span>
-                </div>
-            </div>
-        </div>
-        
         <div class="tips">
-            <h4>💬 Полезные советы</h4>
+            <h3>💡 Что можно сделать:</h3>
             <ul>
-                <li>Страницы, которые вы уже посещали, могут работать офлайн</li>
-                <li>Ваши данные в корзине и избранном сохранены локально</li>
-                <li>Приложение автоматически синхронизируется при восстановлении связи</li>
-                <li>Попробуйте переключиться между Wi-Fi и мобильными данными</li>
+                <li>Проверить подключение к Wi-Fi</li>
+                <li>Включить мобильный интернет</li>
+                <li>Перезагрузить страницу</li>
+                <li>Проверить настройки сети</li>
             </ul>
         </div>
     </div>
     
     <script>
-        let retryAttempts = 0;
-        let isRetrying = false;
-        let connectionCheckInterval;
-        
-        // Проверяем подключение к интернету
-        function checkConnection() {
+        // Автоматически проверяем подключение каждые 5 секунд
+        setInterval(() => {
             if (navigator.onLine) {
-                updateConnectionStatus(true);
-                // Дополнительная проверка реального подключения
-                fetch('/', { 
-                    method: 'HEAD', 
-                    cache: 'no-cache',
-                    mode: 'no-cors'
-                })
-                .then(() => {
-                    // Соединение восстановлено
-                    showConnectionRestored();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                })
-                .catch(() => {
-                    // Ложное срабатывание navigator.onLine
-                    updateConnectionStatus(false);
-                });
-            } else {
-                updateConnectionStatus(false);
+                window.location.reload();
             }
-        }
+        }, 5000);
         
-        // Обновляем статус соединения
-        function updateConnectionStatus(isOnline) {
-            const statusIndicator = document.getElementById('statusIndicator');
-            const statusIcon = document.getElementById('statusIcon');
-            const statusText = document.getElementById('statusText');
-            const connectionStatus = document.getElementById('connectionStatus');
-            const offlineIcon = document.getElementById('offlineIcon');
-            
-            if (isOnline) {
-                statusIndicator.style.background = '#10b981';
-                statusIcon.textContent = '🟢';
-                statusText.textContent = 'Соединение восстановлено';
-                connectionStatus.classList.add('online');
-                offlineIcon.textContent = '📶';
-            } else {
-                statusIndicator.style.background = '#ef4444';
-                statusIcon.textContent = '🔴';
-                statusText.textContent = 'Соединение потеряно';
-                connectionStatus.classList.remove('online');
-                offlineIcon.textContent = '📱';
-            }
-        }
-        
-        // Показываем сообщение о восстановлении соединения
-        function showConnectionRestored() {
-            const title = document.getElementById('pageTitle');
-            const subtitle = document.getElementById('pageSubtitle');
-            
-            title.textContent = 'Соединение восстановлено! 🎉';
-            subtitle.textContent = 'Перенаправляем вас обратно в приложение...';
-            
-            // Анимация иконки
-            const icon = document.getElementById('offlineIcon');
-            icon.style.animation = 'pulse 0.5s infinite';
-        }
-        
-        // Обработка повторной попытки
-        function handleRetry() {
-            if (isRetrying) return;
-            
-            isRetrying = true;
-            retryAttempts++;
-            
-            const button = document.getElementById('retryButton');
-            const retryText = document.getElementById('retryText');
-            
-            button.classList.add('loading');
-            button.disabled = true;
-            retryText.textContent = 'Проверяем соединение...';
-            
-            // Проверяем соединение
-            setTimeout(() => {
-                fetch('/', { 
-                    method: 'HEAD', 
-                    cache: 'no-cache',
-                    mode: 'no-cors'
-                })
-                .then(() => {
-                    // Соединение есть
-                    retryText.textContent = 'Соединение восстановлено!';
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                })
-                .catch(() => {
-                    // Соединения нет
-                    button.classList.remove('loading');
-                    button.disabled = false;
-                    retryText.textContent = 'Попробовать снова';
-                    isRetrying = false;
-                    
-                    if (retryAttempts >= 3) {
-                        retryText.textContent = `Попытка ${retryAttempts + 1}`;
-                        setTimeout(() => {
-                            retryText.textContent = 'Попробовать снова';
-                        }, 2000);
-                    }
-                });
-            }, 2000);
-        }
-        
-        // Получаем информацию о кеше
-        async function getCacheInfo() {
-            try {
-                if ('caches' in window) {
-                    const cacheNames = await caches.keys();
-                    let totalSize = 0;
-                    let pageCount = 0;
-                    let imageCount = 0;
-                    
-                    for (const cacheName of cacheNames) {
-                        const cache = await caches.open(cacheName);
-                        const keys = await cache.keys();
-                        
-                        for (const request of keys) {
-                            const url = new URL(request.url);
-                            if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
-                                imageCount++;
-                            } else if (!url.pathname.startsWith('/api/')) {
-                                pageCount++;
-                            }
-                            totalSize++;
-                        }
-                    }
-                    
-                    document.getElementById('cachedPages').textContent = pageCount;
-                    document.getElementById('cachedImages').textContent = imageCount;
-                    document.getElementById('cacheSize').textContent = totalSize;
-                }
-            } catch (error) {
-                console.log('Cache info not available');
-                document.getElementById('cacheInfo').style.display = 'none';
-            }
-        }
-        
-        // Проверяем доступность кешированных страниц
-        async function checkCachedPages() {
-            const links = document.querySelectorAll('.cached-link');
-            
-            if ('caches' in window) {
-                for (const link of links) {
-                    const response = await caches.match(link.href);
-                    if (!response) {
-                        link.style.opacity = '0.5';
-                        link.title = 'Страница может быть недоступна офлайн';
-                    }
-                }
-            }
-        }
-        
-        // Инициализация
-        function init() {
-            // Проверяем начальное состояние
-            updateConnectionStatus(navigator.onLine);
-            
-            // Получаем информацию о кеше
-            getCacheInfo();
-            
-            // Проверяем доступность кешированных страниц
-            checkCachedPages();
-            
-            // Слушаем изменения состояния подключения
-            window.addEventListener('online', () => {
-                checkConnection();
-            });
-            
-            window.addEventListener('offline', () => {
-                updateConnectionStatus(false);
-            });
-            
-            // Периодически проверяем подключение
-            connectionCheckInterval = setInterval(checkConnection, 10000);
-            
-            // Проверяем соединение сразу
-            setTimeout(checkConnection, 1000);
-        }
-        
-        // Очистка при выходе
-        window.addEventListener('beforeunload', () => {
-            if (connectionCheckInterval) {
-                clearInterval(connectionCheckInterval);
-            }
+        // Слушаем восстановление подключения
+        window.addEventListener('online', () => {
+            window.location.reload();
         });
-        
-        // Запускаем инициализацию
-        init();
     </script>
 </body>
 </html> 

@@ -15,7 +15,10 @@ import {
   Minus,
   Plus,
   Loader2,
-  FileText
+  FileText,
+  Play,
+  Star,
+  Pause
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { ProductCard } from '@/components/ProductCard'
@@ -30,6 +33,7 @@ import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/components/CartProvider'
 import { useWishlist } from '@/components/WishlistProvider'
 import { useNavbarVisibility } from '@/components/NavbarVisibilityProvider'
+import Link from 'next/link'
 
 interface ProductPageProps {
   params: {
@@ -42,6 +46,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [showVideo, setShowVideo] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedTab, setSelectedTab] = useState<'description' | 'features' | 'reviews'>('description')
   const [addingToCart, setAddingToCart] = useState(false)
@@ -154,6 +159,20 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   const product = products.find(p => p.id === params.id)
 
+  // Отладочная информация для текущего товара
+  useEffect(() => {
+    if (product) {
+      console.log('🔍 Текущий товар:', {
+        name: product.name,
+        id: product.id,
+        video_url: product.video_url,
+        hasVideo: !!product.video_url,
+        image_url: product.image_url,
+        images: product.images
+      })
+    }
+  }, [product])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -187,6 +206,9 @@ export default function ProductPage({ params }: ProductPageProps) {
     product.image_url, // Главное изображение
     ...product.images // Дополнительные изображения
   ].filter(Boolean) // Убираем пустые значения
+
+  // Видео товара
+  const productVideo = product.video_url
 
 
 
@@ -230,11 +252,11 @@ export default function ProductPage({ params }: ProductPageProps) {
       <Header />
       
       <main className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6 py-2 sm:py-4">
-        {/* Breadcrumb */}
+        {/* Breadcrumb - скрываем на мобильных */}
         <motion.nav
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
+          className="mb-4 hidden md:block"
         >
           <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <li><a href="/" className="hover:text-primary-600 transition-colors">Главная</a></li>
@@ -247,8 +269,19 @@ export default function ProductPage({ params }: ProductPageProps) {
           </ol>
         </motion.nav>
 
+        {/* Мобильный заголовок - компактный */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3 md:hidden"
+        >
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+            {product.name}
+          </h1>
+        </motion.div>
+
         {/* Product Details */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 mb-6 lg:mb-8">
           {/* Desktop Product Gallery - только для десктопа */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -257,13 +290,24 @@ export default function ProductPage({ params }: ProductPageProps) {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
+              {showVideo && productVideo ? (
+                <video
+                  src={productVideo}
+                  controls
+                  className="w-full h-full object-cover"
+                  onError={() => setShowVideo(false)}
+                />
+              ) : (
               <img
                 src={productImages[selectedImage]}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
+              )}
               
-              {/* Navigation Arrows */}
+              {/* Navigation Arrows - только для изображений */}
+              {!showVideo && productImages.length > 1 && (
+                <>
               <button
                 onClick={prevImage}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
@@ -276,25 +320,71 @@ export default function ProductPage({ params }: ProductPageProps) {
               >
                 <ChevronRight className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               </button>
+                </>
+              )}
 
               {/* Discount Badge */}
               {discount > 0 && (
-                <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg">
                   -{discount}%
+                </div>
+              )}
+
+              {/* Video Toggle Button */}
+              {productVideo && (
+                <button
+                  onClick={() => setShowVideo(!showVideo)}
+                  className="absolute top-4 right-4 p-2 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                  title={showVideo ? "Показать изображения" : "Показать видео"}
+                >
+                  {showVideo ? (
+                    <Pause className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  ) : (
+                    <Play className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  )}
+                </button>
+              )}
+
+              {/* Image Counter - показываем текущее изображение */}
+              {!showVideo && productImages.length > 1 && (
+                <div className="absolute bottom-4 right-4 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                  {selectedImage + 1} / {productImages.length}
                 </div>
               )}
             </div>
 
             {/* Thumbnail Gallery */}
             <div className="grid grid-cols-4 gap-3">
+              {/* Video Thumbnail */}
+              {productVideo && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowVideo(true)}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                    showVideo
+                      ? 'border-primary-500 shadow-lg'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                  }`}
+                >
+                  <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <Play className="h-8 w-8 text-gray-600 dark:text-gray-400" />
+                  </div>
+                </motion.button>
+              )}
+              
+              {/* Image Thumbnails */}
               {productImages.map((image, index) => (
                 <motion.button
                   key={index}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedImage(index)}
+                  onClick={() => {
+                    setSelectedImage(index)
+                    setShowVideo(false)
+                  }}
                   className={`aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                    selectedImage === index
+                    !showVideo && selectedImage === index
                       ? 'border-primary-500 shadow-lg'
                       : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                   }`}
@@ -307,39 +397,128 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </motion.button>
               ))}
             </div>
+
+            {/* Swipe Indicator for Desktop */}
+            {productImages.length > 1 && (
+              <div className="flex justify-center mt-3">
+                <div className="flex space-x-2">
+                  {productImages.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                        !showVideo && selectedImage === index
+                          ? 'bg-primary-500 w-6'
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Mobile Product Gallery - только для мобильных */}
           <div className="lg:hidden">
-            <div className="pb-2 px-1">
+            <div className="pb-2">
               {/* Main Image */}
-              <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg mb-3">
+              <div className="relative aspect-square bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg mb-2">
+                {showVideo && productVideo ? (
+                  <video
+                    src={productVideo}
+                    controls
+                    className="w-full h-full object-cover"
+                    onError={() => setShowVideo(false)}
+                  />
+                ) : (
                 <img
                   src={productImages[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
+                )}
                 
                 {/* Discount Badge */}
                 {discount > 0 && (
-                  <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
                     -{discount}%
+                  </div>
+                )}
+
+                {/* Video Toggle Button */}
+                {productVideo && (
+                  <button
+                    onClick={() => setShowVideo(!showVideo)}
+                    className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                    title={showVideo ? "Показать изображения" : "Показать видео"}
+                  >
+                    {showVideo ? (
+                      <Pause className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                    ) : (
+                      <Play className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                    )}
+                  </button>
+                )}
+
+                {/* Navigation Arrows for Mobile - только для изображений */}
+                {!showVideo && productImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                    >
+                      <ChevronRight className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter - показываем текущее изображение */}
+                {!showVideo && productImages.length > 1 && (
+                  <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                    {selectedImage + 1} / {productImages.length}
                   </div>
                 )}
               </div>
 
-              {/* Thumbnail Gallery */}
-              <div className="flex space-x-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth">
+              {/* Thumbnail Gallery - более компактная */}
+              <div className="flex space-x-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth">
+                {/* Video Thumbnail */}
+                {productVideo && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowVideo(true)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      showVideo
+                        ? 'border-primary-500 shadow-lg'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                    }`}
+                  >
+                    <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <Play className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                  </motion.button>
+                )}
+                
+                {/* Image Thumbnails */}
                 {productImages.map((image, index) => (
                   <motion.button
                     key={index}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                      selectedImage === index
+                    onClick={() => {
+                      setSelectedImage(index)
+                      setShowVideo(false)
+                    }}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      !showVideo && selectedImage === index
                         ? 'border-primary-500 shadow-lg'
-                        : 'border-gray-200 dark:border-gray-700'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                     }`}
                   >
                     <img
@@ -350,6 +529,24 @@ export default function ProductPage({ params }: ProductPageProps) {
                   </motion.button>
                 ))}
               </div>
+
+              {/* Swipe Indicator */}
+              {productImages.length > 1 && (
+                <div className="flex justify-center mt-2">
+                  <div className="flex space-x-1">
+                    {productImages.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                          !showVideo && selectedImage === index
+                            ? 'bg-primary-500 w-4'
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -359,7 +556,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6 hidden lg:block"
           >
-            {/* Brand and Rating */}
+            {/* Product Info */}
             <div>
               <p className="text-primary-600 dark:text-primary-400 font-medium mb-2">
                 {product.brand}
@@ -367,18 +564,14 @@ export default function ProductPage({ params }: ProductPageProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
                 {product.name}
               </h1>
-              
-
-            </div>
 
             {/* Price */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-4xl font-bold text-gray-900 dark:text-white">
                   {formatPrice(product.price)}
                 </span>
                 {product.original_price && (
-                  <span className="text-xl text-gray-500 line-through">
+                  <span className="text-2xl text-gray-500 line-through">
                     {formatPrice(product.original_price)}
                   </span>
                 )}
@@ -391,9 +584,25 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Description */}
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              {product.description}
-            </p>
+            <div className="space-y-3">
+              <div 
+                dangerouslySetInnerHTML={{ __html: product.description }}
+                className="product-description-html line-clamp-2"
+                data-tab="description"
+              />
+              <button
+                onClick={() => {
+                  // Прокручиваем к вкладке описания
+                  const descriptionTab = document.querySelector('[data-tab="description"]')
+                  if (descriptionTab) {
+                    descriptionTab.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+                className="text-primary-600 hover:text-primary-700 text-sm font-medium hover:underline transition-colors"
+              >
+                Еще...
+              </button>
+            </div>
 
             {/* Quantity and Actions */}
             <div className="space-y-4">
@@ -452,45 +661,6 @@ export default function ProductPage({ params }: ProductPageProps) {
                 >
                   <Share2 className="h-5 w-5" />
                 </motion.button>
-              </div>
-
-
-            </div>
-
-            {/* Features */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Основные возможности:
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {product.features.map((feature, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Shipping Info */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
-              <div className="flex items-center space-x-3">
-                <Truck className="h-5 w-5 text-primary-600" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Бесплатная доставка по Молдове от 1000 MDL
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Shield className="h-5 w-5 text-primary-600" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Гарантия 2 года на все товары
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <RotateCcw className="h-5 w-5 text-primary-600" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Возврат в течение 14 дней
-                </span>
               </div>
             </div>
           </motion.div>
@@ -628,10 +798,10 @@ export default function ProductPage({ params }: ProductPageProps) {
               <MediaViewer
                 isOpen={showMediaViewer}
                 onClose={() => setShowMediaViewer(false)}
-                media={currentReview?.media?.[0] || {} as any} // Передаем первое медиа текущего отзыва
+                media={currentReview?.media?.[0] || {} as any}
                 review={currentReview || {}}
                 productName={product.name}
-                allReviews={reviews.filter(r => r.media && r.media.length > 0)} // Только отзывы с медиа
+                allReviews={reviews.filter(r => r.media && r.media.length > 0)}
                 currentReviewIndex={reviews.findIndex(r => r.id === currentReview?.id) || 0}
                 onReviewChange={(index) => {
                   const reviewsWithMedia = reviews.filter(r => r.media && r.media.length > 0)
@@ -649,8 +819,6 @@ export default function ProductPage({ params }: ProductPageProps) {
                 review={currentReview || {}}
                 productName={product.name}
               />
-
-
 
               {/* Основные возможности */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg">
@@ -708,6 +876,8 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
+        {/* Отзывы для мобильной версии - УБИРАЕМ ОТСЮДА */}
+
         {/* Tabs - только для десктопа */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -741,14 +911,16 @@ export default function ProductPage({ params }: ProductPageProps) {
               {selectedTab === 'description' && (
                 <motion.div
                   key="description"
+                  data-tab="description"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   className="prose prose-gray dark:prose-invert max-w-none"
                 >
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {product.description}
-                  </p>
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                    className="product-description-html"
+                  />
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed mt-4">
                     Этот продукт разработан с использованием передовых технологий и материалов высшего качества. 
                     Он обеспечивает надежную работу и длительный срок службы, что делает его отличным выбором 
@@ -828,7 +1000,11 @@ export default function ProductPage({ params }: ProductPageProps) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {similarProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <Link key={product.id} href={`/product/${product.id}`} className="block hover:scale-105 transition-transform duration-200">
+                  <ProductCard
+                    product={product}
+                  />
+                </Link>
               ))}
             </div>
           </motion.div>
@@ -903,9 +1079,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                       Описание
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {product.description}
-                    </p>
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                      className="product-description-html"
+                    />
                     <p className="text-gray-600 dark:text-gray-400 leading-relaxed mt-4">
                       Этот продукт разработан с использованием передовых технологий и материалов высшего качества. 
                       Он обеспечивает надежную работу и длительный срок службы, что делает его отличным выбором 
@@ -984,9 +1161,11 @@ export default function ProductPage({ params }: ProductPageProps) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: (index % 20) * 0.05 }}
               >
+                <Link href={`/product/${product.id}`} className="block hover:scale-105 transition-transform duration-200">
                 <ProductCard
                   product={product}
                 />
+                </Link>
               </motion.div>
             ))}
           </div>

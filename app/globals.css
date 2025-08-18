@@ -832,3 +832,115 @@
     height: 10px !important;
   }
 } 
+
+/* Стили для HTML-контента в описаниях товаров */
+.product-description-html {
+  @apply text-gray-600 dark:text-gray-400 leading-relaxed;
+}
+
+.product-description-html h1,
+.product-description-html h2,
+.product-description-html h3,
+.product-description-html h4,
+.product-description-html h5,
+.product-description-html h6 {
+  @apply font-semibold text-gray-900 dark:text-white mb-2 mt-4;
+}
+
+.product-description-html h1 {
+  @apply text-2xl;
+}
+
+.product-description-html h2 {
+  @apply text-xl;
+}
+
+.product-description-html h3 {
+  @apply text-lg;
+}
+
+.product-description-html h4,
+.product-description-html h5,
+.product-description-html h6 {
+  @apply text-base;
+}
+
+.product-description-html p {
+  @apply mb-3 last:mb-0;
+}
+
+.product-description-html ul,
+.product-description-html ol {
+  @apply mb-3 pl-6 space-y-1;
+}
+
+.product-description-html li {
+  @apply mb-1;
+}
+
+.product-description-html ul li {
+  @apply list-disc;
+}
+
+.product-description-html ol li {
+  @apply list-decimal;
+}
+
+.product-description-html strong,
+.product-description-html b {
+  @apply font-semibold text-gray-900 dark:text-white;
+}
+
+.product-description-html em,
+.product-description-html i {
+  @apply italic;
+}
+
+.product-description-html a {
+  @apply text-primary-600 hover:text-primary-700 underline;
+}
+
+.product-description-html blockquote {
+  @apply border-l-4 border-primary-500 pl-4 py-2 bg-gray-50 dark:bg-gray-800 italic;
+}
+
+.product-description-html code {
+  @apply bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-mono;
+}
+
+.product-description-html pre {
+  @apply bg-gray-100 dark:bg-gray-700 p-4 rounded-lg overflow-x-auto;
+}
+
+.product-description-html table {
+  @apply w-full border-collapse border border-gray-300 dark:border-gray-600;
+}
+
+.product-description-html th,
+.product-description-html td {
+  @apply border border-gray-300 dark:border-gray-600 px-3 py-2 text-left;
+}
+
+.product-description-html th {
+  @apply bg-gray-50 dark:bg-gray-700 font-semibold;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 768px) {
+  .product-description-html h1 {
+    @apply text-xl;
+  }
+  
+  .product-description-html h2 {
+    @apply text-lg;
+  }
+  
+  .product-description-html h3 {
+    @apply text-base;
+  }
+  
+  .product-description-html ul,
+  .product-description-html ol {
+    @apply pl-4;
+  }
+} 

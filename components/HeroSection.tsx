@@ -189,24 +189,35 @@ export function HeroSection({ categories = [] }: HeroSectionProps) {
               </motion.button>
             </motion.div>
 
-            {/* Stats */}
+            {/* Stats - заменяем на преимущества */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
-              className="flex items-center space-x-8 pt-8"
+              className="grid grid-cols-3 gap-6 pt-8"
             >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">10K+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Довольных клиентов</div>
+              <div className="text-center group">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Гарантия качества</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Проверенные бренды</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">500+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Товаров</div>
+              
+              <div className="text-center group">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Быстрая доставка</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">По всей Молдове</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">24/7</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Поддержка</div>
+              
+              <div className="text-center group">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Умные решения</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Для вашего дома</div>
               </div>
             </motion.div>
           </motion.div>

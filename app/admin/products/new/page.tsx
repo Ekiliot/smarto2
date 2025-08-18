@@ -14,8 +14,10 @@ import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
 import { ImageUpload } from '@/components/ImageUpload'
 import { MultipleImageUpload } from '@/components/MultipleImageUpload'
+import { VideoUpload } from '@/components/VideoUpload'
+import { ProductGallery } from '@/components/ProductGallery'
 import { HTMLEditor } from '@/components/HTMLEditor'
-import { createProduct, getAllCategories, uploadProductImage, updateProduct } from '@/lib/supabase'
+import { createProduct, getAllCategories, uploadProductImage, uploadProductVideo, updateProduct } from '@/lib/supabase'
 
 interface Category {
   id: string
@@ -40,6 +42,7 @@ export default function NewProductPage() {
     purchase_price: '',
     original_price: '',
     image_url: '',
+    video_url: '',
     category_id: '',
     brand: '',
     in_stock: true,
@@ -48,6 +51,7 @@ export default function NewProductPage() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [images, setImages] = useState<string[]>([])
 
@@ -128,6 +132,7 @@ export default function NewProductPage() {
         purchase_price: parseFloat(formData.purchase_price || formData.price),
         original_price: formData.original_price ? parseFloat(formData.original_price) : undefined,
         image_url: '', // Временно пустое
+        video_url: '', // Временно пустое
         images: [], // Временно пустой массив
         category_id: formData.category_id,
         brand: formData.brand.trim(),
@@ -155,6 +160,18 @@ export default function NewProductPage() {
           throw uploadError
         }
         finalImageUrl = imageUrl
+      }
+
+      // Загружаем видео если выбран файл
+      let finalVideoUrl = formData.video_url
+      if (selectedVideoFile) {
+        setIsUploadingImage(true)
+        const { data: videoUrl, error: uploadError } = await uploadProductVideo(selectedVideoFile, product.id)
+        
+        if (uploadError) {
+          throw uploadError
+        }
+        finalVideoUrl = videoUrl
       }
 
       // Загружаем дополнительные изображения
@@ -187,11 +204,13 @@ export default function NewProductPage() {
       // Обновляем товар с финальными URL'ами
       console.log('Final update data:', {
         image_url: finalImageUrl,
+        video_url: finalVideoUrl,
         images: finalImages
       })
       
       const { error: updateError } = await updateProduct(product.id, {
         image_url: finalImageUrl,
+        video_url: finalVideoUrl,
         images: finalImages
       })
 
@@ -312,34 +331,18 @@ export default function NewProductPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Главное изображение товара
+                    Галерея товара
                   </label>
-                  <ImageUpload
-                    value={formData.image_url}
-                    onChange={(url) => handleInputChange('image_url', url)}
-                    onFileSelect={(file) => setSelectedFile(file)}
-                    placeholder="Загрузить главное изображение"
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Дополнительные изображения (до 5)
-                  </label>
-                  <MultipleImageUpload
-                    value={images}
-                    onChange={setImages}
-                    onFileSelect={(files) => {
-                      console.log('Files selected in MultipleImageUpload:', files)
-                      setSelectedFiles(prev => [...prev, ...files])
-                    }}
-                    onFileRemove={(index) => {
-                      console.log('File removed at index:', index)
-                      setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-                    }}
-                    maxImages={5}
-                    placeholder="Загрузить дополнительные изображения"
+                  <ProductGallery
+                    mainImage={formData.image_url}
+                    onMainImageChange={(url) => handleInputChange('image_url', url)}
+                    additionalImages={images}
+                    onAdditionalImagesChange={setImages}
+                    videoUrl={formData.video_url}
+                    onVideoUrlChange={(url) => handleInputChange('video_url', url)}
+                    onMainImageFileSelect={(file) => setSelectedFile(file)}
+                    onAdditionalImagesFileSelect={(files) => setSelectedFiles(prev => [...prev, ...files])}
+                    onVideoFileSelect={(file) => setSelectedVideoFile(file)}
                     disabled={saving}
                   />
                 </div>

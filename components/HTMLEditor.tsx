@@ -15,7 +15,8 @@ import {
   AlignCenter,
   AlignRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Eraser
 } from 'lucide-react'
 
 interface HTMLEditorProps {
@@ -37,35 +38,293 @@ export function HTMLEditor({
   const [showToolbar, setShowToolbar] = useState(true)
   const editorRef = useRef<HTMLDivElement>(null)
   const [isFocused, setIsFocused] = useState(false)
+  const lastCaretPosition = useRef<number>(0)
+
+  // Сохраняем позицию курсора
+  const saveCaretPosition = () => {
+    if (editorRef.current) {
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        const preCaretRange = range.cloneRange()
+        preCaretRange.selectNodeContents(editorRef.current)
+        preCaretRange.setEnd(range.endContainer, range.endOffset)
+        lastCaretPosition.current = preCaretRange.toString().length
+      }
+    }
+  }
+
+  // Восстанавливаем позицию курсора
+  const restoreCaretPosition = () => {
+    if (editorRef.current && lastCaretPosition.current > 0) {
+      const selection = window.getSelection()
+      if (selection) {
+        const range = document.createRange()
+        let charIndex = 0
+        let found = false
+        
+        const traverseNodes = (node: Node) => {
+          if (found) return
+          
+          if (node.nodeType === Node.TEXT_NODE) {
+            const nextCharIndex = charIndex + node.textContent!.length
+            if (lastCaretPosition.current <= nextCharIndex) {
+              range.setStart(node, lastCaretPosition.current - charIndex)
+              range.setEnd(node, lastCaretPosition.current - charIndex)
+              found = true
+              return
+            }
+            charIndex = nextCharIndex
+          } else {
+            for (let i = 0; i < node.childNodes.length; i++) {
+              traverseNodes(node.childNodes[i])
+              if (found) return
+            }
+          }
+        }
+        
+        traverseNodes(editorRef.current)
+        
+        if (found) {
+          selection.removeAllRanges()
+          selection.addRange(range)
+        }
+      }
+    }
+  }
 
   useEffect(() => {
     if (editorRef.current && !isPreview) {
+      // Сохраняем текущую позицию курсора
+      saveCaretPosition()
+      
+      // Обновляем содержимое
       editorRef.current.innerHTML = value
+      
+      // Восстанавливаем позицию курсора
+      setTimeout(() => {
+        restoreCaretPosition()
+      }, 0)
     }
   }, [value, isPreview])
 
   const execCommand = (command: string, value?: string) => {
     if (disabled) return
+    
+    // Сохраняем позицию курсора
+    saveCaretPosition()
+    
     document.execCommand(command, false, value)
     editorRef.current?.focus()
+    
+    // Восстанавливаем позицию курсора
+    setTimeout(() => {
+      restoreCaretPosition()
+    }, 0)
   }
 
   const insertHTML = (html: string) => {
     if (disabled) return
+    
+    // Сохраняем позицию курсора
+    saveCaretPosition()
+    
     document.execCommand('insertHTML', false, html)
     editorRef.current?.focus()
+    
+    // Восстанавливаем позицию курсора
+    setTimeout(() => {
+      restoreCaretPosition()
+    }, 0)
+  }
+
+  const clearFormatting = () => {
+    if (disabled) return
+    
+    // Сохраняем позицию курсора
+    saveCaretPosition()
+    
+    // Очищаем все форматирование
+    document.execCommand('removeFormat', false)
+    // Также очищаем все стили
+    if (editorRef.current) {
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        const span = document.createElement('span')
+        span.appendChild(range.extractContents())
+        range.insertNode(span)
+        // Убираем все атрибуты style
+        const elements = span.querySelectorAll('[style]')
+        elements.forEach(el => el.removeAttribute('style'))
+        // Убираем span, оставляя содержимое
+        if (span.parentNode) {
+          span.parentNode.replaceChild(document.createTextNode(span.textContent || ''), span)
+        }
+      }
+    }
+    editorRef.current?.focus()
+    
+    // Восстанавливаем позицию курсора
+    setTimeout(() => {
+      restoreCaretPosition()
+    }, 0)
+  }
+
+  const generateTable = (rows: number, cols: number): string => {
+    let tableHTML = '<table style="border-collapse: collapse; width: 100%; border: 1px solid #ddd;">'
+    
+    // Заголовок таблицы
+    tableHTML += '<thead><tr>'
+    for (let i = 0; i < cols; i++) {
+      tableHTML += `<th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Заголовок ${i + 1}</th>`
+    }
+    tableHTML += '</tr></thead>'
+    
+    // Тело таблицы
+    tableHTML += '<tbody>'
+    for (let i = 0; i < rows; i++) {
+      tableHTML += '<tr>'
+      for (let j = 0; j < cols; j++) {
+        tableHTML += `<td style="border: 1px solid #ddd; padding: 8px;">Ячейка ${i + 1}-${j + 1}</td>`
+      }
+      tableHTML += '</tr>'
+    }
+    tableHTML += '</tbody></table>'
+    
+    return tableHTML
   }
 
   const handleInput = () => {
     if (editorRef.current) {
+      // Сохраняем позицию курсора перед обновлением
+      saveCaretPosition()
+      
+      // Вызываем onChange с новым значением
       onChange(editorRef.current.innerHTML)
+      
+      // Восстанавливаем позицию курсора
+      setTimeout(() => {
+        restoreCaretPosition()
+      }, 0)
     }
   }
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
-    const text = e.clipboardData.getData('text/plain')
+    
+    // Сохраняем позицию курсора
+    saveCaretPosition()
+    
+    // Пытаемся получить различные типы контента
+    let html = e.clipboardData.getData('text/html')
+    let text = e.clipboardData.getData('text/plain')
+    let files = e.clipboardData.files
+    
+    // Если есть файлы (изображения), обрабатываем их
+    if (files.length > 0) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            const imageUrl = event.target?.result as string
+            insertHTML(`<img src="${imageUrl}" alt="Вставленное изображение" style="max-width: 100%; height: auto;" />`)
+          }
+          reader.readAsDataURL(file)
+        }
+      })
+      return
+    }
+    
+    // Если есть HTML контент, используем его
+    if (html) {
+      // Очищаем HTML от потенциально опасных тегов и атрибутов
+      const cleanHTML = sanitizeHTML(html)
+      document.execCommand('insertHTML', false, cleanHTML)
+    } else if (text) {
+      // Если HTML нет, вставляем обычный текст
     document.execCommand('insertText', false, text)
+    }
+    
+    // Восстанавливаем позицию курсора
+    setTimeout(() => {
+      restoreCaretPosition()
+    }, 0)
+  }
+
+  // Функция для очистки HTML от потенциально опасных элементов
+  const sanitizeHTML = (html: string): string => {
+    // Создаем временный div для парсинга HTML
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = html
+    
+    // Разрешенные HTML теги
+    const allowedTags = [
+      'p', 'div', 'span', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th'
+    ]
+    
+    // Разрешенные CSS свойства
+    const allowedStyles = [
+      'color', 'background-color', 'font-size', 'font-weight', 'font-style', 'text-align',
+      'text-decoration', 'margin', 'padding', 'border', 'width', 'height', 'max-width'
+    ]
+    
+    // Рекурсивно очищаем DOM
+    const cleanNode = (node: Node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element
+        const tagName = element.tagName.toLowerCase()
+        
+        // Если тег не разрешен, заменяем его содержимым
+        if (!allowedTags.includes(tagName)) {
+          const fragment = document.createDocumentFragment()
+          while (element.firstChild) {
+            fragment.appendChild(element.firstChild)
+          }
+          element.parentNode?.replaceChild(fragment, element)
+          return
+        }
+        
+        // Очищаем атрибуты, оставляя только безопасные
+        const allowedAttributes = ['href', 'src', 'alt', 'title', 'target']
+        const attributes = Array.from(element.attributes)
+        
+        attributes.forEach(attr => {
+          if (!allowedAttributes.includes(attr.name)) {
+            element.removeAttribute(attr.name)
+          }
+        })
+        
+        // Очищаем стили, оставляя только разрешенные
+        if (element.hasAttribute('style')) {
+          const elementWithStyle = element as HTMLElement
+          const computedStyle = window.getComputedStyle(elementWithStyle)
+          const cleanStyles: string[] = []
+          
+          allowedStyles.forEach(style => {
+            const value = computedStyle.getPropertyValue(style)
+            if (value && value !== 'initial' && value !== 'normal') {
+              cleanStyles.push(`${style}: ${value}`)
+            }
+          })
+          
+          if (cleanStyles.length > 0) {
+            element.setAttribute('style', cleanStyles.join('; '))
+          } else {
+            element.removeAttribute('style')
+          }
+        }
+        
+        // Рекурсивно обрабатываем дочерние элементы
+        Array.from(element.childNodes).forEach(cleanNode)
+      }
+    }
+    
+    // Очищаем весь DOM
+    Array.from(tempDiv.childNodes).forEach(cleanNode)
+    
+    return tempDiv.innerHTML
   }
 
   const togglePreview = () => {
@@ -82,11 +341,22 @@ export function HTMLEditor({
     { separator: true },
     { icon: Link, command: 'createLink', title: 'Вставить ссылку', action: () => {
       const url = prompt('Введите URL ссылки:')
-      if (url) execCommand('createLink', url)
+      if (url) {
+        const text = prompt('Введите текст ссылки (или оставьте пустым для URL):', url)
+        if (text) {
+          insertHTML(`<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`)
+        } else {
+          insertHTML(`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`)
+        }
+      }
     }},
     { icon: Image, command: 'insertImage', title: 'Вставить изображение', action: () => {
       const url = prompt('Введите URL изображения:')
-      if (url) insertHTML(`<img src="${url}" alt="Изображение" style="max-width: 100%; height: auto;" />`)
+      if (url) {
+        const alt = prompt('Введите описание изображения (alt):', '')
+        const altText = alt || 'Изображение'
+        insertHTML(`<img src="${url}" alt="${altText}" style="max-width: 100%; height: auto;" />`)
+      }
     }},
     { icon: Code, command: 'formatBlock', title: 'Блок кода', action: () => insertHTML('<pre><code>Код</code></pre>') },
     { icon: Quote, command: 'formatBlock', title: 'Цитата', action: () => insertHTML('<blockquote>Цитата</blockquote>') },
@@ -94,6 +364,21 @@ export function HTMLEditor({
     { icon: AlignLeft, command: 'justifyLeft', title: 'Выровнять по левому краю' },
     { icon: AlignCenter, command: 'justifyCenter', title: 'Выровнять по центру' },
     { icon: AlignRight, command: 'justifyRight', title: 'Выровнять по правому краю' },
+    { icon: Eraser, command: 'removeFormat', title: 'Очистить форматирование', action: () => clearFormatting() },
+    { separator: true },
+    { 
+      icon: List, 
+      command: 'insertTable', 
+      title: 'Вставить таблицу', 
+      action: () => {
+        const rows = prompt('Количество строк:', '3')
+        const cols = prompt('Количество столбцов:', '3')
+        if (rows && cols) {
+          const tableHTML = generateTable(parseInt(rows), parseInt(cols))
+          insertHTML(tableHTML)
+        }
+      }
+    },
   ]
 
   return (

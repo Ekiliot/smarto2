@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 import { AdminGuard } from '@/components/AdminGuard'
-import { getAllProducts, deleteProduct } from '@/lib/supabase'
+import { getAllProductsWithRatings, deleteProduct } from '@/lib/supabase'
 
 interface Product {
   id: string
@@ -38,14 +38,19 @@ interface Product {
     id: string
     name: string
   }
+  // Вычисляемые поля
+  profit?: number
+  profitMargin?: number
 }
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingRatings, setLoadingRatings] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterStock, setFilterStock] = useState('all')
+  const [filterProfit, setFilterProfit] = useState('all')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Загружаем товары
@@ -55,7 +60,10 @@ export default function AdminProductsPage() {
 
   const loadProducts = async () => {
     try {
-      const { data, error } = await getAllProducts()
+      setLoading(true)
+      setLoadingRatings(true)
+      
+      const { data, error } = await getAllProductsWithRatings()
       if (error) {
         console.error('Error loading products:', error)
       } else {
@@ -65,6 +73,7 @@ export default function AdminProductsPage() {
       console.error('Error loading products:', err)
     } finally {
       setLoading(false)
+      setLoadingRatings(false)
     }
   }
 
@@ -77,7 +86,24 @@ export default function AdminProductsPage() {
                         (filterStock === 'in_stock' && product.in_stock) ||
                         (filterStock === 'out_of_stock' && !product.in_stock)
     
-    return matchesSearch && matchesCategory && matchesStock
+    // Фильтр по прибыли
+    const profit = product.price - product.purchase_price
+    const matchesProfit = filterProfit === 'all' ||
+                         (filterProfit === 'profitable' && profit > 0) ||
+                         (filterProfit === 'unprofitable' && profit <= 0)
+    
+    return matchesSearch && matchesCategory && matchesStock && matchesProfit
+  })
+
+  // Вычисляем прибыль для товаров
+  const productsWithProfit = filteredProducts.map(product => {
+    const profit = product.price - product.purchase_price
+    const profitMargin = product.price > 0 ? (profit / product.price) * 100 : 0
+    return {
+      ...product,
+      profit,
+      profitMargin
+    }
   })
 
   // Удаление товара
@@ -205,12 +231,24 @@ export default function AdminProductsPage() {
                 <option value="out_of_stock">Нет в наличии</option>
               </select>
 
+              {/* Profit Filter */}
+              <select
+                value={filterProfit}
+                onChange={(e) => setFilterProfit(e.target.value)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="all">Все товары</option>
+                <option value="profitable">Прибыльные</option>
+                <option value="unprofitable">Убыточные</option>
+              </select>
+
               {/* Clear Filters */}
               <motion.button
                 onClick={() => {
                   setSearchTerm('')
                   setFilterCategory('')
                   setFilterStock('all')
+                  setFilterProfit('all')
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -218,6 +256,68 @@ export default function AdminProductsPage() {
               >
                 Очистить фильтры
               </motion.button>
+            </div>
+          </motion.div>
+
+          {/* Statistics */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Всего товаров</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{products.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">В наличии</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {products.filter(p => p.in_stock).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                  <Package className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Прибыльные</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {products.filter(p => (p.price - p.purchase_price) > 0).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                  <Package className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Убыточные</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {products.filter(p => (p.price - p.purchase_price) <= 0).length}
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -229,7 +329,7 @@ export default function AdminProductsPage() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence>
-              {filteredProducts.map((product, index) => (
+              {productsWithProfit.map((product, index) => (
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -265,8 +365,19 @@ export default function AdminProductsPage() {
                       <div className="flex items-center space-x-1">
                         <span className="text-yellow-400">★</span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {product.rating}
+                          {loadingRatings ? (
+                            <span className="text-gray-400">...</span>
+                          ) : (
+                            typeof product.rating === 'number' && !isNaN(product.rating) && product.rating > 0 
+                              ? product.rating.toFixed(1) 
+                              : '0.0'
+                          )}
                         </span>
+                        {!loadingRatings && product.reviews_count > 0 && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({product.reviews_count})
+                          </span>
+                        )}
                       </div>
                     </div>
                     
@@ -275,19 +386,51 @@ export default function AdminProductsPage() {
                     </p>
                     
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                      {product.description}
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                        className="product-description-html prose prose-sm max-w-none"
+                      />
                     </p>
 
-                    {/* Price */}
-                    <div className="flex items-center space-x-2 mb-4">
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        {product.price.toLocaleString('ru-RU')} MDL
-                      </span>
-                      {product.original_price && (
-                        <span className="text-sm text-gray-500 line-through">
-                          {product.original_price.toLocaleString('ru-RU')} MDL
+                    {/* Price and Profit */}
+                    <div className="space-y-3 mb-4">
+                      {/* Price */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          {product.price.toLocaleString('ru-RU')} MDL
                         </span>
-                      )}
+                        {product.original_price && (
+                          <span className="text-sm text-gray-500 line-through">
+                            {product.original_price.toLocaleString('ru-RU')} MDL
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Profit Info */}
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs">Прибыль</p>
+                            <p className={`font-semibold ${
+                              product.profit && product.profit > 0 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {product.profit ? `${product.profit.toFixed(2)} MDL` : '0.00 MDL'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs">Маржа</p>
+                            <p className={`font-semibold ${
+                              product.profitMargin && product.profitMargin > 0 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {product.profitMargin ? `${product.profitMargin.toFixed(1)}%` : '0%'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Category and Stock */}
@@ -309,16 +452,20 @@ export default function AdminProductsPage() {
                     {/* Actions */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
+                        {/* View Product Button */}
                         <motion.a
-                          href={`/admin/products/${product.id}`}
+                          href={`/product/${product.id}`}
+                          target="_blank"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Просмотр"
+                          className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-1"
+                          title="Посмотреть товар"
                         >
                           <Eye className="h-4 w-4" />
+                          <span>Посмотреть</span>
                         </motion.a>
                         
+                        {/* Edit Button */}
                         <motion.a
                           href={`/admin/products/${product.id}/edit`}
                           whileHover={{ scale: 1.05 }}
@@ -330,6 +477,7 @@ export default function AdminProductsPage() {
                         </motion.a>
                       </div>
                       
+                      {/* Delete Button */}
                       <motion.button
                         onClick={() => handleDelete(product.id)}
                         disabled={deletingId === product.id}
@@ -352,7 +500,7 @@ export default function AdminProductsPage() {
           </motion.div>
 
           {/* Empty State */}
-          {filteredProducts.length === 0 && !loading && (
+          {productsWithProfit.length === 0 && !loading && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

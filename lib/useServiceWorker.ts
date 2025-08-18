@@ -24,12 +24,14 @@ interface UpdateInfo {
   isUpdating: boolean
 }
 
+const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'
+
 export function useServiceWorker() {
   const [state, setState] = useState<ServiceWorkerState>({
     isSupported: false,
     isInstalled: false,
     isActive: false,
-    isOnline: navigator?.onLine ?? true,
+    isOnline: isBrowser ? navigator.onLine : true,
     registration: null,
     version: null,
     cacheInfo: null
@@ -44,6 +46,10 @@ export function useServiceWorker() {
 
   // Регистрация Service Worker
   useEffect(() => {
+    if (!isBrowser) {
+      return
+    }
+
     if (!('serviceWorker' in navigator)) {
       console.log('🚫 Service Worker не поддерживается')
       return
@@ -70,14 +76,21 @@ export function useServiceWorker() {
         // Слушаем события обновления
         registration.addEventListener('updatefound', () => {
           console.log('🔄 Обновление Service Worker найдено')
-          setUpdateInfo(prev => ({ ...prev, hasUpdate: true }))
           
           const newWorker = registration.installing
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setUpdateInfo(prev => ({ ...prev, hasUpdate: true }))
-                addNotification('Доступно обновление приложения')
+                // Проверяем, действительно ли есть обновление
+                // Показываем уведомление только если есть waiting worker и это мобильное устройство
+                if (registration.waiting && isMobileDevice()) {
+                  setUpdateInfo(prev => ({ ...prev, hasUpdate: true }))
+                  addNotification('Доступно обновление приложения')
+                } else if (registration.waiting && !isMobileDevice()) {
+                  // На веб-версии просто логируем, но не показываем уведомления
+                  console.log('🔄 Обновление Service Worker доступно, но это веб-версия')
+                  // Не устанавливаем hasUpdate на веб-версии
+                }
               }
             })
           }
@@ -88,10 +101,14 @@ export function useServiceWorker() {
           console.log('🔄 Service Worker активирован')
           setState(prev => ({ ...prev, isActive: true }))
           setUpdateInfo({ hasUpdate: false, isUpdating: false })
-          addNotification('Приложение обновлено')
           
-          // Перезагружаем страницу после обновления
-          if (updateInfo.isUpdating) {
+          // Показываем уведомление только на мобильных устройствах
+          if (isMobileDevice()) {
+            addNotification('Приложение обновлено')
+          }
+          
+          // Перезагружаем страницу после обновления только на мобильных устройствах
+          if (updateInfo.isUpdating && isMobileDevice()) {
             window.location.reload()
           }
         })
@@ -155,6 +172,11 @@ export function useServiceWorker() {
 
   // Добавление уведомления
   const addNotification = useCallback((message: string) => {
+    // Не показываем уведомления об обновлении на веб-версии
+    if (message.includes('обновление') && !isMobileDevice()) {
+      return
+    }
+    
     setNotifications(prev => [...prev, message])
     
     // Автоматически удаляем уведомление через 5 секунд
@@ -163,15 +185,29 @@ export function useServiceWorker() {
     }, 5000)
   }, [])
 
+  // Проверка на мобильное устройство
+  const isMobileDevice = useCallback(() => {
+    if (!isBrowser) return false
+    return window.matchMedia('(max-width: 768px)').matches || 
+           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  }, [])
+
   // Обновление Service Worker
   const updateServiceWorker = useCallback(async () => {
     if (!state.registration) return
 
-      try {
+    // Не обновляем Service Worker на веб-версии
+    if (!isMobileDevice()) {
+      console.log('🚫 Обновление Service Worker недоступно на веб-версии')
+      setUpdateInfo(prev => ({ ...prev, hasUpdate: false }))
+      return
+    }
+
+    try {
       setUpdateInfo(prev => ({ ...prev, isUpdating: true }))
       
       // Проверяем обновления
-        await state.registration.update()
+      await state.registration.update()
       
       // Если есть waiting worker, активируем его
       if (state.registration.waiting) {
@@ -179,7 +215,7 @@ export function useServiceWorker() {
       }
       
       console.log('🔄 Service Worker обновлен')
-      } catch (error) {
+    } catch (error) {
       console.error('❌ Ошибка обновления Service Worker:', error)
       setUpdateInfo(prev => ({ ...prev, isUpdating: false }))
     }
@@ -187,6 +223,7 @@ export function useServiceWorker() {
 
   // Отправка сообщения в Service Worker
   const sendMessageToSW = useCallback((message: any) => {
+    if (!isBrowser) return
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage(message)
     }
@@ -216,7 +253,7 @@ export function useServiceWorker() {
       sendMessageToSW({ type: 'CLEAR_CACHE' })
       
       // Также очищаем локальные кеши
-      if ('caches' in window) {
+      if (isBrowser && 'caches' in window) {
         const cacheNames = await caches.keys()
         await Promise.all(cacheNames.map(name => caches.delete(name)))
       }
@@ -231,6 +268,7 @@ export function useServiceWorker() {
 
   // Получение информации о кеше
   const getCacheInfo = useCallback(async () => {
+    if (!isBrowser) return
     if (!navigator.serviceWorker.controller) return
 
     try {
@@ -267,7 +305,7 @@ export function useServiceWorker() {
 
   // Запрос разрешения на уведомления
   const requestNotificationPermission = useCallback(async () => {
-    if (!('Notification' in window)) {
+    if (!isBrowser || !('Notification' in window)) {
       console.log('🚫 Push уведомления не поддерживаются')
       return false
     }
