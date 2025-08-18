@@ -16,6 +16,7 @@ import {
 import { useChat } from '@/lib/hooks/useChat'
 import { Message, FileUpload } from '@/lib/types/chat'
 import { formatFileSize, isImageFile, isVideoFile, isAudioFile } from '@/lib/supabase/chat'
+import { QuickActions } from './QuickActions'
 
 interface ChatInterfaceProps {
   className?: string
@@ -293,6 +294,13 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-xs text-green-600 dark:text-green-400">Онлайн</span>
           </div>
+        </div>
+      )}
+
+      {/* Быстрые действия - только для десктопа */}
+      {!isMobile && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <QuickActions onSendMessage={sendTextMessage} />
         </div>
       )}
 

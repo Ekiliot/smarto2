@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Header } from '@/components/Header'
 import { ChatInterface } from '@/components/ChatInterface'
+import { QuickActions } from '@/components/QuickActions'
 import { useAuth } from '@/components/AuthProvider'
 import { ArrowLeft, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -44,6 +45,13 @@ export default function ChatPage() {
       {/* Мобильная версия чата */}
       <div className="md:hidden">
         <div className="chat-mobile flex flex-col safe-area-top">
+          {/* Быстрые действия для мобильной версии */}
+          <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <QuickActions onSendMessage={(message: string) => {
+              // Здесь нужно будет передать функцию отправки сообщения
+              console.log('Quick message:', message)
+            }} />
+          </div>
           {/* Интерфейс чата - занимает все доступное пространство */}
           <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
             <ChatInterface isMobile={true} />

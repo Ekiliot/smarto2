@@ -1,7 +1,7 @@
 {
   "name": "Smarto - Магазин умных устройств",
   "short_name": "Smarto",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "Ведущий магазин умного дома и электроники в Молдове. Откройте для себя новейшие умные устройства, гаджеты и технологии для вашего дома.",
   "theme_color": "#3B82F6",
   "background_color": "#ffffff",
@@ -15,7 +15,7 @@
   "dir": "ltr",
       "icons": [
       {
-        "src": "/icon.png?v=1.2.0",
+        "src": "/icon.png?v=1.2.2",
         "sizes": "512x512",
         "type": "image/png",
         "purpose": "maskable any"
@@ -30,7 +30,7 @@
         "url": "/products",
         "icons": [
           {
-            "src": "/icon.png?v=1.2.0",
+            "src": "/icon.png?v=1.2.2",
             "sizes": "96x96"
           }
         ]
@@ -42,7 +42,7 @@
         "url": "/cart",
         "icons": [
           {
-            "src": "/icon.png?v=1.2.0",
+            "src": "/icon.png?v=1.2.2",
             "sizes": "96x96"
           }
         ]
@@ -54,7 +54,7 @@
         "url": "/account",
         "icons": [
           {
-            "src": "/icon.png?v=1.2.0",
+            "src": "/icon.png?v=1.2.2",
             "sizes": "96x96"
           }
         ]
