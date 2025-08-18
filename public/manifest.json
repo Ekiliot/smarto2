@@ -1,7 +1,7 @@
 {
   "name": "Smarto - Магазин умных устройств",
   "short_name": "Smarto",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "description": "Ведущий магазин умного дома и электроники в Молдове. Откройте для себя новейшие умные устройства, гаджеты и технологии для вашего дома.",
   "theme_color": "#3B82F6",
   "background_color": "#ffffff",
@@ -13,52 +13,52 @@
   "categories": ["shopping", "lifestyle", "business"],
   "lang": "ru",
   "dir": "ltr",
-  "icons": [
-    {
-      "src": "/icon.png?v=1.1.9",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
-    }
-  ],
+      "icons": [
+      {
+        "src": "/icon.png?v=1.2.0",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable any"
+      }
+    ],
   "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Каталог",
-      "short_name": "Товары",
-      "description": "Просмотр каталога товаров",
-      "url": "/products",
-      "icons": [
-        {
-          "src": "/icon.png?v=1.1.9",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Корзина",
-      "short_name": "Корзина",
-      "description": "Перейти в корзину",
-      "url": "/cart",
-      "icons": [
-        {
-          "src": "/icon.png?v=1.1.9",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Профиль",
-      "short_name": "Аккаунт",
-      "description": "Мой аккаунт",
-      "url": "/account",
-      "icons": [
-        {
-          "src": "/icon.png?v=1.1.9",
-          "sizes": "96x96"
-        }
-      ]
-    }
+      "shortcuts": [
+      {
+        "name": "Каталог",
+        "short_name": "Товары",
+        "description": "Просмотр каталога товаров",
+        "url": "/products",
+        "icons": [
+          {
+            "src": "/icon.png?v=1.2.0",
+            "sizes": "96x96"
+          }
+        ]
+      },
+          {
+        "name": "Корзина",
+        "short_name": "Корзина",
+        "description": "Перейти в корзину",
+        "url": "/cart",
+        "icons": [
+          {
+            "src": "/icon.png?v=1.2.0",
+            "sizes": "96x96"
+          }
+        ]
+      },
+          {
+        "name": "Профиль",
+        "short_name": "Аккаунт",
+        "description": "Мой аккаунт",
+        "url": "/account",
+        "icons": [
+          {
+            "src": "/icon.png?v=1.2.0",
+            "sizes": "96x96"
+          }
+        ]
+      }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
