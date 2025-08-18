@@ -33,7 +33,7 @@ export function useServiceWorker() {
     isActive: false,
     isOnline: isBrowser ? navigator.onLine : true,
     registration: null,
-    version: null,
+    version: '1.1.9',
     cacheInfo: null
   })
 

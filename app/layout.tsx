@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: 'Leading smart home and electronics store in Moldova. Discover the latest smart devices, gadgets, and technology for your home.',
   keywords: 'smart home, electronics, gadgets, Moldova, smart devices, automation',
   authors: [{ name: 'Smarto Team' }],
-  applicationName: 'Smarto v1.1.8',
+  applicationName: 'Smarto v1.1.9',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -38,23 +38,20 @@ export const metadata: Metadata = {
     siteName: 'Smarto',
     title: 'Smarto - Smart Home Store',
     description: 'Leading smart home and electronics store in Moldova',
-    images: '/icon.png',
+    images: '/icon.png?v=1.1.9',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Smarto - Smart Home Store',
     description: 'Leading smart home and electronics store in Moldova',
-    images: '/icon.png',
+    images: '/icon.png?v=1.1.9',
   },
   icons: {
     icon: [
-      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
-      { url: '/icons/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
-      { url: '/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml' },
+      { url: '/icon.png?v=1.1.9', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
-      { url: '/icons/apple-touch-icon.svg', sizes: '180x180', type: 'image/svg+xml' },
+      { url: '/icon.png?v=1.1.9', sizes: '512x512', type: 'image/png' },
     ],
   },
 }

@@ -1,11 +1,11 @@
 // Версия и имена кешей
-const CACHE_VERSION = '1.1.8'
+const SW_VERSION = '1.1.9'
 const CACHE_PREFIX = 'smarto2'
 const CACHES = {
-  STATIC: `${CACHE_PREFIX}-static-v${CACHE_VERSION}`,
-  DYNAMIC: `${CACHE_PREFIX}-dynamic-v${CACHE_VERSION}`,
-  IMAGES: `${CACHE_PREFIX}-images-v${CACHE_VERSION}`,
-  API: `${CACHE_PREFIX}-api-v${CACHE_VERSION}`
+  STATIC: `${CACHE_PREFIX}-static-v${SW_VERSION}`,
+  DYNAMIC: `${CACHE_PREFIX}-dynamic-v${SW_VERSION}`,
+  IMAGES: `${CACHE_PREFIX}-images-v${SW_VERSION}`,
+  API: `${CACHE_PREFIX}-api-v${SW_VERSION}`
 }
 
 // Конфигурация кеширования
@@ -62,7 +62,7 @@ const STRATEGIES = {
 
 // Установка Service Worker
 self.addEventListener('install', (event) => {
-  console.log(`🔧 Service Worker v${CACHE_VERSION} installing...`)
+  console.log(`�� Service Worker v${SW_VERSION} installing...`)
   
   event.waitUntil(
     Promise.all([
@@ -81,7 +81,7 @@ self.addEventListener('install', (event) => {
 
 // Активация Service Worker
 self.addEventListener('activate', (event) => {
-  console.log(`✅ Service Worker v${CACHE_VERSION} activating...`)
+  console.log(`✅ Service Worker v${SW_VERSION} activating...`)
   
   event.waitUntil(
     Promise.all([
@@ -108,11 +108,46 @@ self.addEventListener('fetch', (event) => {
     return
   }
   
-  // Определяем стратегию кеширования
-  const strategy = determineStrategy(url, request)
+  // Определяем стратегию кеширования на основе URL
+  const getCachingStrategy = (url) => {
+    const urlString = url.toString()
+    
+    // Не кешируем иконки с версией
+    if (urlString.includes('/icon.png?v=') || urlString.includes('/manifest.json')) {
+      return 'NETWORK_ONLY'
+    }
+    
+    // Статические страницы
+    if (urlString.includes('/') && !urlString.includes('/api/') && !urlString.includes('/admin/')) {
+      return 'CACHE_FIRST'
+    }
+    
+    // API запросы
+    if (urlString.includes('/api/')) {
+      return 'NETWORK_FIRST'
+    }
+    
+    // Админ панель
+    if (urlString.includes('/admin/')) {
+      return 'NETWORK_FIRST'
+    }
+    
+    // Изображения
+    if (urlString.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
+      return 'CACHE_FIRST'
+    }
+    
+    // Шрифты и CSS/JS
+    if (urlString.match(/\.(css|js|woff|woff2|ttf|eot)$/i)) {
+      return 'CACHE_FIRST'
+    }
+    
+    // По умолчанию
+    return 'CACHE_FIRST'
+  }
   
   event.respondWith(
-    handleRequest(request, strategy).catch(error => {
+    handleRequest(request, getCachingStrategy(url)).catch(error => {
       console.error('❌ Request failed:', error)
       return handleRequestError(request, error)
     })
@@ -188,207 +223,115 @@ function determineStrategy(url, request) {
 }
 
 // Обработка запросов
-async function handleRequest(request, { strategy, cache: cacheName }) {
+async function handleRequest(request, strategy) {
   const cacheKey = getCacheKey(request)
   
   switch (strategy) {
-    case STRATEGIES.CACHE_FIRST:
-      return await cacheFirst(request, cacheName, cacheKey)
+    case 'CACHE_FIRST':
+      return await cacheFirst(request, CACHES.DYNAMIC, cacheKey)
     
-    case STRATEGIES.NETWORK_FIRST:
-      return await networkFirst(request, cacheName, cacheKey)
+    case 'NETWORK_FIRST':
+      return await networkFirst(request, CACHES.DYNAMIC, cacheKey)
     
-    case STRATEGIES.STALE_WHILE_REVALIDATE:
-      return await staleWhileRevalidate(request, cacheName, cacheKey)
+    case 'STALE_WHILE_REVALIDATE':
+      return await staleWhileRevalidate(request, CACHES.DYNAMIC, cacheKey)
     
-    case STRATEGIES.NETWORK_ONLY:
+    case 'NETWORK_ONLY':
       return await fetch(request)
     
-    case STRATEGIES.CACHE_ONLY:
+    case 'CACHE_ONLY':
       return await caches.match(cacheKey) || new Response('Not found', { status: 404 })
     
     default:
-      return await networkFirst(request, cacheName, cacheKey)
+      return await networkFirst(request, CACHES.DYNAMIC, cacheKey)
   }
 }
 
-// Стратегия "кеш сначала"
-async function cacheFirst(request, cacheName, cacheKey) {
-  try {
-    const cached = await getCachedResponse(cacheKey, cacheName)
-    if (cached) {
-      console.log(`📱 Serving from cache: ${request.url}`)
-      return cached
-    }
-    
-    // Если нет в кеше, пробуем загрузить из сети
+  // Стратегия Cache First
+  async function cacheFirst(request, cacheName, cacheKey) {
     try {
-      const response = await fetchAndCache(request, cacheName, cacheKey)
+      // Сначала пытаемся получить из кеша
+      const cachedResponse = await caches.match(cacheKey)
+      if (cachedResponse) {
+        console.log(`📦 Serving from cache: ${request.url}`)
+        return cachedResponse
+      }
+      
+      // Если нет в кеше, загружаем из сети
+      const response = await fetch(request)
+      if (response.ok) {
+        await fetchAndCache(request, response, cacheName, cacheKey)
+      }
+      
       return response
     } catch (error) {
-      console.log(`🌐 Network failed, no cache available: ${request.url}`)
-      
-      // Для навигационных запросов показываем offline страницу
-      if (request.mode === 'navigate') {
-        const offlineResponse = await caches.match('/offline.html')
-        if (offlineResponse) {
-          return offlineResponse
-        }
-        
-        // Если нет offline страницы, возвращаем базовую HTML страницу
-        return new Response(
-          `<!DOCTYPE html>
-          <html>
-          <head>
-            <title>Страница недоступна</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-              .offline { color: #666; margin: 20px 0; }
-              .retry { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-            </style>
-          </head>
-          <body>
-            <h1>📱 Страница недоступна</h1>
-            <p class="offline">Нет подключения к интернету</p>
-            <p>Эта страница не была загружена ранее и не может быть показана offline.</p>
-            <button class="retry" onclick="window.location.reload()">Попробовать снова</button>
-          </body>
-          </html>`,
-          { 
-            status: 200,
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-          }
-        )
+      console.error('❌ Cache First failed:', error)
+      return new Response('Service Unavailable', { status: 503 })
+    }
+  }
+
+  // Стратегия Network First
+  async function networkFirst(request, cacheName, cacheKey) {
+    try {
+      // Сначала пытаемся загрузить из сети
+      const response = await fetch(request)
+      if (response.ok) {
+        await fetchAndCache(request, response, cacheName, cacheKey)
+        return response
       }
       
-      throw error
-    }
-  } catch (error) {
-    console.error(`❌ Cache first strategy failed: ${request.url}`, error)
-    throw error
-  }
-}
-
-// Стратегия "сеть сначала"
-async function networkFirst(request, cacheName, cacheKey) {
-  try {
-    return await fetchAndCache(request, cacheName, cacheKey)
-  } catch (error) {
-    console.log(`🌐 Network failed, trying cache: ${request.url}`)
-    
-    const cached = await getCachedResponse(cacheKey, cacheName)
-    if (cached) {
-      console.log(`📱 Serving from cache (network failed): ${request.url}`)
-      return cached
-    }
-    
-    // Если нет в кеше, показываем offline страницу для навигационных запросов
-    if (request.mode === 'navigate') {
-      const offlineResponse = await caches.match('/offline.html')
-      if (offlineResponse) {
-        return offlineResponse
+      // Если сеть недоступна, возвращаем из кеша
+      const cachedResponse = await caches.match(cacheKey)
+      if (cachedResponse) {
+        console.log(`📦 Serving from cache (network failed): ${request.url}`)
+        return cachedResponse
       }
       
-      // Если нет offline страницы, возвращаем базовую HTML страницу
-      return new Response(
-        `<!DOCTYPE html>
-        <html>
-        <head>
-          <title>Страница недоступна</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-            .offline { color: #666; margin: 20px 0; }
-            .retry { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-          </style>
-        </head>
-        <body>
-          <h1>📱 Страница недоступна</h1>
-          <p class="offline">Нет подключения к интернету</p>
-          <p>Эта страница не была загружена ранее и не может быть показана offline.</p>
-          <button class="retry" onclick="window.location.reload()">Попробовать снова</button>
-        </body>
-        </html>`,
-        { 
-          status: 200,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
-        }
-      )
+      return response
+    } catch (error) {
+      console.error('❌ Network First failed:', error)
+      // Пытаемся получить из кеша при ошибке сети
+      const cachedResponse = await caches.match(cacheKey)
+      if (cachedResponse) {
+        console.log(`📦 Serving from cache (network error): ${request.url}`)
+        return cachedResponse
+      }
+      return new Response('Service Unavailable', { status: 503 })
     }
-    
-    throw error
   }
-}
 
-// Стратегия "устаревший контент пока обновляется"
-async function staleWhileRevalidate(request, cacheName, cacheKey) {
-  try {
-    const cached = getCachedResponse(cacheKey, cacheName)
-    const network = fetchAndCache(request, cacheName, cacheKey).catch(() => null)
-    
-    // Возвращаем кешированную версию сразу, если есть
-    const cachedResponse = await cached
-    if (cachedResponse) {
-      console.log(`📱 Serving stale content from cache: ${request.url}`)
-      // Обновляем кеш в фоне
-      network.then(response => {
-        if (response) {
-          console.log(`🔄 Background updated: ${request.url}`)
+  // Стратегия Stale While Revalidate
+  async function staleWhileRevalidate(request, cacheName, cacheKey) {
+    try {
+      // Сначала возвращаем из кеша (если есть)
+      const cachedResponse = await caches.match(cacheKey)
+      
+      // Затем обновляем кеш в фоне
+      fetch(request).then(async (response) => {
+        if (response.ok) {
+          await fetchAndCache(request, response, cacheName, cacheKey)
         }
+      }).catch(error => {
+        console.error('❌ Background revalidation failed:', error)
       })
-      return cachedResponse
-    }
-    
-    // Если нет кеша, ждем сеть
-    const networkResponse = await network
-    if (networkResponse) {
-      return networkResponse
-    }
-    
-    // Если сеть не работает и нет кеша, показываем offline страницу
-    if (request.mode === 'navigate') {
-      const offlineResponse = await caches.match('/offline.html')
-      if (offlineResponse) {
-        return offlineResponse
+      
+      if (cachedResponse) {
+        console.log(`📦 Serving stale from cache: ${request.url}`)
+        return cachedResponse
       }
       
-      // Если нет offline страницы, возвращаем базовую HTML страницу
-      return new Response(
-        `<!DOCTYPE html>
-        <html>
-        <head>
-          <title>Страница недоступна</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-            .offline { color: #666; margin: 20px 0; }
-            .retry { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-          </style>
-        </head>
-        <body>
-          <h1>📱 Страница недоступна</h1>
-          <p class="offline">Нет подключения к интернету</p>
-          <p>Эта страница не была загружена ранее и не может быть показана offline.</p>
-          <button class="retry" onclick="window.location.reload()">Попробовать снова</button>
-        </body>
-        </html>`,
-        { 
-          status: 200,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
-        }
-      )
+      // Если нет в кеше, загружаем из сети
+      const response = await fetch(request)
+      if (response.ok) {
+        await fetchAndCache(request, response, cacheName, cacheKey)
+      }
+      
+      return response
+    } catch (error) {
+      console.error('❌ Stale While Revalidate failed:', error)
+      return new Response('Service Unavailable', { status: 503 })
     }
-    
-    throw new Error('No cache and network failed')
-  } catch (error) {
-    console.error(`❌ Stale while revalidate failed: ${request.url}`, error)
-    throw error
   }
-}
 
 // Получение кешированного ответа с проверкой TTL
 async function getCachedResponse(cacheKey, cacheName) {
@@ -421,14 +364,8 @@ async function getCachedResponse(cacheKey, cacheName) {
 }
 
 // Загрузка и кеширование ответа
-async function fetchAndCache(request, cacheName, cacheKey) {
+async function fetchAndCache(request, response, cacheName, cacheKey) {
   try {
-    const response = await fetch(request)
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
     // Проверяем размер файла
     const contentLength = response.headers.get('content-length')
     if (contentLength && parseInt(contentLength) > CACHE_CONFIG.MAX_FILE_SIZE) {
@@ -442,7 +379,7 @@ async function fetchAndCache(request, cacheName, cacheKey) {
     // Добавляем метаданные
     const headers = new Headers(responseToCache.headers)
     headers.set('sw-cached-at', Date.now().toString())
-    headers.set('sw-cache-version', CACHE_VERSION)
+    headers.set('sw-cache-version', SW_VERSION)
     
     const responseWithMeta = new Response(responseToCache.body, {
       status: responseToCache.status,
@@ -459,27 +396,8 @@ async function fetchAndCache(request, cacheName, cacheKey) {
       console.log('📱 Offline mode - skipping cache write')
     }
     
-    return response
   } catch (error) {
-    console.log(`🌐 Fetch failed: ${request.url}`, error.message)
-    
-    // Если это навигационный запрос, пробуем найти в кеше
-    if (request.mode === 'navigate') {
-      for (const cacheName of Object.values(CACHES)) {
-        try {
-          const cached = await caches.open(cacheName)
-          const response = await cached.match(request)
-          if (response) {
-            console.log(`📱 Found cached version after fetch failed: ${request.url}`)
-            return response
-          }
-        } catch (e) {
-          // Игнорируем ошибки кеша
-        }
-      }
-    }
-    
-    throw error
+    console.error('❌ Fetch and cache failed:', error)
   }
 }
 
@@ -539,9 +457,8 @@ function getCacheTTL(cacheName) {
 // Генерация ключа кеша
 function getCacheKey(request) {
   const url = new URL(request.url)
-  // Убираем некоторые query параметры для лучшего кеширования
-  const ignoredParams = ['utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid']
-  ignoredParams.forEach(param => url.searchParams.delete(param))
+  // Убираем параметры версии для кеширования
+  url.searchParams.delete('v')
   return url.toString()
 }
 
@@ -874,4 +791,4 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-console.log(`🚀 Service Worker v${CACHE_VERSION} loaded`) 
+console.log(`�� Service Worker v${SW_VERSION} loaded`) 
