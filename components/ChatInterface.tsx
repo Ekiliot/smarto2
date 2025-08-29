@@ -11,12 +11,13 @@ import {
   File, 
   Music,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react'
 import { useChat } from '@/lib/hooks/useChat'
 import { Message, FileUpload } from '@/lib/types/chat'
 import { formatFileSize, isImageFile, isVideoFile, isAudioFile } from '@/lib/supabase/chat'
-import { QuickActions } from './QuickActions'
+import { MobileChatModal } from './MobileChatModal'
 
 interface ChatInterfaceProps {
   className?: string
@@ -297,15 +298,10 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
         </div>
       )}
 
-      {/* Быстрые действия - только для десктопа */}
-      {!isMobile && (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <QuickActions onSendMessage={sendTextMessage} />
-        </div>
-      )}
+
 
       {/* Сообщения */}
-      <div className={`flex-1 overflow-y-auto p-4 space-y-4 chat-messages-mobile ${isMobile ? 'pb-0' : ''}`} style={isMobile ? { paddingBottom: '100px' } : {}}>
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 chat-messages-mobile ${isMobile ? 'pb-32' : ''}`}>
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -361,65 +357,70 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
         </motion.div>
       )}
 
-      {/* Поле ввода - прикреплено к низу на мобильных */}
+      {/* Поле ввода - прикреплено к нижней части экрана */}
       <div className={`border-t border-gray-200 dark:border-gray-700 ${
         isMobile 
-          ? 'fixed bottom-0 left-0 right-0 z-40 p-3 safe-area-bottom chat-input-mobile' 
+          ? 'p-3 bg-white dark:bg-gray-800 fixed bottom-0 left-0 right-0 z-50 shadow-lg' 
           : 'p-4 bg-white dark:bg-gray-800'
       }`}>
-        <div className={`${isMobile ? 'chat-input-container' : 'flex items-center space-x-2'}`}>
-          {/* Кнопка прикрепления файла */}
-          <button
-            onClick={() => setShowFileInput(!showFileInput)}
-            className={`flex-shrink-0 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors chat-button-mobile flex items-center justify-center ${
-              isMobile ? '' : 'p-2'
-            }`}
-            title="Прикрепить файл"
-          >
-            <Paperclip className="h-5 w-5" />
-          </button>
+        {isMobile ? (
+          /* Мобильная версия - модальное окно вместо поля ввода */
+          <MobileChatModal
+            isOpen={true}
+            onClose={() => {}}
+            onSendMessage={sendTextMessage}
+            onFileSelect={handleFileSelect}
+          />
+        ) : (
+          /* Десктопная версия - обычное поле ввода */
+          <div className="flex items-center space-x-2">
+            {/* Кнопка прикрепления файла */}
+            <button
+              onClick={() => setShowFileInput(!showFileInput)}
+              className="flex-shrink-0 p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors flex items-center justify-center"
+              title="Прикрепить файл"
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
 
-          {/* Поле ввода текста */}
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Напишите сообщение..."
-              className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white chat-input-field-mobile ${
-                isMobile ? 'px-3 py-2' : 'px-3 py-2'
-              }`}
-              rows={1}
-              style={{
-                minHeight: '40px',
-                maxHeight: '100px',
-                lineHeight: '1.4'
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement
-                target.style.height = 'auto'
-                target.style.height = Math.min(target.scrollHeight, 100) + 'px'
-              }}
-            />
+            {/* Поле ввода текста */}
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Напишите сообщение..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                rows={1}
+                style={{
+                  minHeight: '40px',
+                  maxHeight: '100px',
+                  lineHeight: '1.4'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 100) + 'px'
+                }}
+              />
+            </div>
+
+            {/* Кнопка отправки */}
+            <button
+              onClick={handleSendMessage}
+              disabled={!messageText.trim() || sending}
+              className="flex-shrink-0 p-2 bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center rounded-full"
+              title="Отправить"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </button>
           </div>
-
-          {/* Кнопка отправки */}
-          <button
-            onClick={handleSendMessage}
-            disabled={!messageText.trim() || sending}
-            className={`flex-shrink-0 bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors chat-button-mobile flex items-center justify-center ${
-              isMobile ? 'rounded-full' : 'p-2 rounded-full'
-            }`}
-            title="Отправить"
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </button>
-        </div>
+        )}
 
         {/* Выбор файла */}
         {showFileInput && (
@@ -440,7 +441,7 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm chat-button-mobile flex items-center justify-center"
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm flex items-center justify-center"
               >
                 Выбрать файлы
               </button>
@@ -470,6 +471,8 @@ export function ChatInterface({ className = '', isMobile = false }: ChatInterfac
           </div>
         </div>
       </div>
+
+      
     </div>
   )
 } 

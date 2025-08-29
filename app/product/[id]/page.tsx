@@ -791,7 +791,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                 onClose={() => setShowReviewsModal(false)}
                 productId={params.id}
                 productName={product.name}
-                onOpenMediaViewer={() => setShowMediaViewer(true)}
+                onOpenMediaViewer={(review) => {
+                  setCurrentReview(review)
+                  setShowMediaViewer(true)
+                }}
                 onOpenComments={openComments}
               />
 

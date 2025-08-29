@@ -29,6 +29,7 @@ export function MobileHeader() {
   const isProductsPage = pathname === '/products'
   const isProductPage = pathname.startsWith('/product/')
   const isAccountPage = pathname === '/account'
+  const isSupportPage = pathname.startsWith('/support')
 
   // Получаем ID товара из URL для проверки вишлиста
   const productId = isProductPage ? pathname.split('/').pop() : null
@@ -99,7 +100,7 @@ export function MobileHeader() {
 
   return (
     <AnimatePresence>
-      {isVisible && !isAccountPage && !isNavbarHidden && (
+      {isVisible && !isAccountPage && !isSupportPage && !isNavbarHidden && (
         <motion.header 
           initial={{ y: -100 }}
           animate={{ y: 0 }}

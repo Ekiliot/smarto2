@@ -1,20 +1,9 @@
 import { useState } from 'react'
+import { useOrders, type QuickOrder, type QuickOrderItem } from './useOrders'
 
-export interface Order {
-  id: string
-  number: string
-  date: string
-  total: number
-  status: string
-  items: OrderItem[]
-}
-
-export interface OrderItem {
-  id: string
-  name: string
-  quantity: number
-  price: number
-}
+// Алиасы для совместимости
+type Order = QuickOrder
+type OrderItem = QuickOrderItem
 
 export interface ProblemType {
   id: string
@@ -30,30 +19,8 @@ export function useQuickActions() {
   const [selectedProblem, setSelectedProblem] = useState<ProblemType | null>(null)
   const [step, setStep] = useState<'order' | 'item' | 'problem' | 'preview'>('order')
 
-  // Моковые данные для демонстрации
-  const mockOrders: Order[] = [
-    {
-      id: '1',
-      number: 'ORD-2024-001',
-      date: '2024-01-15',
-      total: 2500,
-      status: 'Доставлен',
-      items: [
-        { id: '1', name: 'Умная лампочка Philips Hue', quantity: 2, price: 800 },
-        { id: '2', name: 'Умная розетка TP-Link', quantity: 1, price: 900 }
-      ]
-    },
-    {
-      id: '2',
-      number: 'ORD-2024-002',
-      date: '2024-01-20',
-      total: 1800,
-      status: 'В обработке',
-      items: [
-        { id: '3', name: 'Умный термостат Nest', quantity: 1, price: 1800 }
-      ]
-    }
-  ]
+  // Получаем реальные данные о заказах
+  const { orders, loading, error } = useOrders()
 
   const problemTypes: ProblemType[] = [
     {
@@ -141,7 +108,9 @@ export function useQuickActions() {
     selectedItem,
     selectedProblem,
     step,
-    mockOrders,
+    orders,
+    loading,
+    error,
     problemTypes,
     handleOrderSelect,
     handleItemSelect,

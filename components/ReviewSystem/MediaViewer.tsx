@@ -785,14 +785,14 @@ export default function MediaViewer({
               {/* Кнопка закрытия */}
               <button
                 onClick={handleClose}
-                className="absolute top-6 right-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
+                className="absolute top-3 sm:top-6 right-3 sm:right-6 z-20 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
 
               {/* Индикатор типа контента */}
-              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-                <div className="bg-black/50 rounded-full px-4 py-2 text-white text-sm font-medium">
+              <div className="absolute top-3 sm:top-6 left-1/2 transform -translate-x-1/2 z-20">
+                <div className="bg-black/50 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-white text-xs sm:text-sm font-medium">
                   {isShowingProducts ? 'Товары' : 'Отзывы'}
                 </div>
               </div>
@@ -811,15 +811,15 @@ export default function MediaViewer({
                     setCurrentProductIndex(0)
                   }
                 }}
-                className="absolute top-6 left-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
+                className="absolute top-3 sm:top-6 left-3 sm:left-6 z-20 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
                 title="Переключить режим"
               >
                 {isShowingProducts ? '📝' : '🛒'}
               </button>
 
               {/* Прогресс-бар */}
-              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
-                <div className="bg-black/30 rounded-full h-1 w-32 overflow-hidden">
+              <div className="absolute top-16 sm:top-20 left-1/2 transform -translate-x-1/2 z-20">
+                <div className="bg-black/30 rounded-full h-1 w-24 sm:w-32 overflow-hidden">
                   <div 
                     className="bg-white h-full transition-all duration-300"
                     style={{ 
@@ -912,8 +912,8 @@ export default function MediaViewer({
                         })
                         return hasDiscount // Показываем только если есть реальная скидка
                       })() && (
-                        <div className="absolute top-6 left-6 z-20">
-                          <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                        <div className="absolute top-3 sm:top-6 left-3 sm:left-6 z-20">
+                          <div className="bg-red-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold shadow-lg">
                             -{calculateDiscount(currentProduct.original_price, currentProduct.price)}%
                           </div>
                         </div>
@@ -925,7 +925,7 @@ export default function MediaViewer({
                           {currentProductMediaIndex > 0 && (
                             <button
                               onClick={prevProductMedia}
-                              className="absolute left-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors z-20"
+                              className="absolute left-3 sm:left-6 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors z-20"
                             >
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -935,7 +935,7 @@ export default function MediaViewer({
                           {currentProductMediaIndex < currentProductImages.length - 1 && (
                             <button
                               onClick={nextProductMedia}
-                              className="absolute right-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors z-20"
+                              className="absolute right-3 sm:right-6 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors z-20"
                             >
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -947,7 +947,7 @@ export default function MediaViewer({
 
                       {/* Индикатор фото товара */}
                       {hasMultipleProductImages && (
-                        <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                        <div className="absolute bottom-32 sm:bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
                           {currentProductImages.map((media: any, index: number) => {
                             const isVideo = currentProduct.video_url && index === 0
                             console.log(`🔍 Индикатор медиа ${index}:`, {
@@ -1000,53 +1000,7 @@ export default function MediaViewer({
                             onClick={showVideoControls}
                           />
                           
-                          {/* Кастомный плеер для отзывов - всегда показываем */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-                            {/* Прогресс-бар */}
-                            <div 
-                              className="w-full h-2 bg-white/30 rounded-full cursor-pointer mb-3"
-                              onClick={handleVideoSeek}
-                            >
-                              <div 
-                                className="h-full bg-white rounded-full transition-all duration-100"
-                                style={{ width: `${(currentTime / duration) * 100}%` }}
-                              />
-                            </div>
-                            
-                            {/* Контролы */}
-                            <div className="flex items-center justify-between text-white">
-                              <div className="flex items-center space-x-4">
-                                {/* Кнопка Play/Pause */}
-                                <button
-                                  onClick={handleVideoPlay}
-                                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                                >
-                                  {isPlaying ? (
-                                    <Pause className="w-5 h-5" />
-                                  ) : (
-                                    <Play className="w-5 h-5" />
-                                  )}
-                                </button>
-                                
-                                {/* Кнопка Mute */}
-                                <button
-                                  onClick={handleVideoMute}
-                                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                                >
-                                  {isMuted ? (
-                                    <VolumeX className="w-5 h-5" />
-                                  ) : (
-                                    <Volume2 className="w-5 h-5" />
-                                  )}
-                                </button>
-                                
-                                {/* Тайминг */}
-                                <span className="text-sm">
-                                  {formatTime(currentTime)} / {formatTime(duration)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+
                         </div>
                       )}
 
@@ -1056,7 +1010,7 @@ export default function MediaViewer({
                           {currentMediaIndex > 0 && (
                             <button
                               onClick={prevMedia}
-                              className="absolute left-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
+                              className="absolute left-3 sm:left-6 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
                             >
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1066,7 +1020,7 @@ export default function MediaViewer({
                           {currentMediaIndex < allMedia.length - 1 && (
                             <button
                               onClick={nextMedia}
-                              className="absolute right-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
+                              className="absolute right-3 sm:right-6 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black/50 rounded-full text-white hover:bg-white/20 transition-colors"
                             >
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1078,7 +1032,7 @@ export default function MediaViewer({
 
                       {/* Индикатор медиа отзыва */}
                       {allMedia.length > 1 && (
-                        <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2">
+                        <div className="absolute bottom-32 sm:bottom-60 left-1/2 transform -translate-x-1/2 flex gap-2">
                           {allMedia.map((_, index) => (
                             <div
                               key={index}
@@ -1095,7 +1049,7 @@ export default function MediaViewer({
               </div>
 
               {/* Информация - TikTok стиль */}
-              <div className="absolute bottom-8 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 sm:p-6">
                 {isShowingProducts ? (
                   /* Информация о товаре */
                   currentProduct && (
@@ -1215,8 +1169,8 @@ export default function MediaViewer({
                   /* Информация об отзыве */
                   shouldShowReview ? (
                     <>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
                           {review.user?.image_url ? (
                             <img
                               src={review.user.image_url}
@@ -1230,7 +1184,7 @@ export default function MediaViewer({
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-white font-semibold text-lg">
+                          <p className="text-white font-semibold text-base sm:text-lg">
                             {review.user?.first_name && review.user?.last_name 
                               ? `${review.user.first_name} ${review.user.last_name}` 
                               : review.user?.email}
@@ -1245,19 +1199,69 @@ export default function MediaViewer({
                       </div>
 
                       {/* Ограниченный текст отзыва */}
-                      <div className="mb-4">
-                        <p className="text-white text-base leading-relaxed max-w-md break-words overflow-hidden line-clamp-2">
+                      <div className="mb-3 sm:mb-4">
+                        <p className="text-white text-sm sm:text-base leading-relaxed max-w-md break-words overflow-hidden line-clamp-2">
                           {review.text}
                         </p>
                         {review.text.length > 150 && (
                           <button
                             onClick={() => setShowFullTextModal(true)}
-                            className="text-blue-400 hover:text-blue-300 text-sm font-medium mt-2 transition-colors"
+                            className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm font-medium mt-2 transition-colors"
                           >
                             Смотреть еще
                           </button>
                         )}
                       </div>
+
+                      {/* Кастомный плеер для видео отзыва (как у товаров) */}
+                      {currentMedia.media_type === 'video' && (
+                        <div className="mt-4">
+                          {/* Прогресс-бар */}
+                          <div 
+                            className="w-full h-2 bg-white/30 rounded-full cursor-pointer mb-3"
+                            onClick={handleVideoSeek}
+                          >
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-100"
+                              style={{ width: `${(currentTime / duration) * 100}%` }}
+                            />
+                          </div>
+                          {/* Контролы */}
+                          <div className="flex items-center justify-between text-white">
+                            <div className="flex items-center space-x-4">
+                              {/* Кнопка Play/Pause */}
+                              <button
+                                onClick={handleVideoPlay}
+                                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                              >
+                                {isPlaying ? (
+                                  <Pause className="w-5 h-5" />
+                                ) : (
+                                  <Play className="w-5 h-5" />
+                                )}
+                              </button>
+                              {/* Кнопка Mute */}
+                              <button
+                                onClick={handleVideoMute}
+                                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                              >
+                                {isMuted ? (
+                                  <VolumeX className="w-5 h-5" />
+                                ) : (
+                                  <Volume2 className="w-5 h-5" />
+                                )}
+                              </button>
+                              {/* Тайминг */}
+                              <span className="text-sm">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+
+
                     </>
                   ) : null
                 )}
@@ -1267,7 +1271,7 @@ export default function MediaViewer({
 
               {/* Кнопки действий справа - TikTok стиль с улучшенной видимостью */}
               <div 
-                className="absolute right-2 bottom-64 flex flex-col items-center gap-4 pr-1 z-30"
+                className="absolute right-2 sm:right-4 bottom-32 sm:bottom-64 flex flex-col items-center gap-3 sm:gap-4 pr-1 z-30"
                 data-action-buttons="true"
                 data-no-drag="true"
                 onPointerDown={(e) => {
@@ -1297,10 +1301,10 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className="flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-14 h-14"
+                        className="flex flex-col items-center justify-center p-2 sm:p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-12 h-12 sm:w-14 sm:h-14"
                         style={{ touchAction: 'none' }}
                       >
-                        <ShoppingCart className="w-7 h-7" />
+                        <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7" />
                       </button>
 
                       {/* Вишлист */}
@@ -1316,14 +1320,14 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className={`flex flex-col items-center justify-center p-3 backdrop-blur-sm rounded-2xl border transition-all duration-200 shadow-lg hover:scale-110 w-14 h-14 ${
+                        className={`flex flex-col items-center justify-center p-2 sm:p-3 backdrop-blur-sm rounded-2xl border transition-all duration-200 shadow-lg hover:scale-110 w-12 h-12 sm:w-14 sm:h-14 ${
                           isInWishlist(currentProduct)
                             ? 'bg-red-500/80 border-red-400/50 text-white'
                             : 'bg-black/40 border-white/20 text-white hover:bg-black/60'
                         }`}
                         style={{ touchAction: 'none' }}
                       >
-                        <Heart className={`w-7 h-7 ${isInWishlist(currentProduct) ? 'fill-current' : ''}`} />
+                        <Heart className={`w-6 h-6 sm:w-7 sm:h-7 ${isInWishlist(currentProduct) ? 'fill-current' : ''}`} />
                       </button>
 
                       {/* Поделиться */}
@@ -1339,10 +1343,10 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className="flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-14 h-14"
+                        className="flex flex-col items-center justify-center p-2 sm:p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-12 h-12 sm:w-14 sm:h-14"
                         style={{ touchAction: 'none' }}
                       >
-                        <Share2 className="w-7 h-7" />
+                        <Share2 className="w-6 h-6 sm:w-7 sm:h-7" />
                       </button>
                     </>
                   )
@@ -1362,14 +1366,14 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className={`flex flex-col items-center gap-1 p-3 backdrop-blur-sm rounded-2xl border transition-all duration-200 shadow-lg hover:scale-110 ${
+                        className={`flex flex-col items-center gap-1 p-2 sm:p-3 backdrop-blur-sm rounded-2xl border transition-all duration-200 shadow-lg hover:scale-110 ${
                           isLiked
                             ? 'bg-red-500/80 border-red-400/50 text-white'
                             : 'bg-black/40 border-white/20 text-white hover:bg-black/60'
                         }`}
                         style={{ touchAction: 'none' }}
                       >
-                        <Heart className={`w-7 h-7 ${isLiked ? 'fill-current' : ''}`} />
+                        <Heart className={`w-6 h-6 sm:w-7 sm:h-7 ${isLiked ? 'fill-current' : ''}`} />
                         <span className="text-xs font-medium">{likeCount}</span>
                       </button>
 
@@ -1385,10 +1389,10 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className="flex flex-col items-center gap-1 p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg"
+                        className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg"
                         style={{ touchAction: 'none' }}
                       >
-                        <MessageCircle className="w-7 h-7" />
+                        <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
                         <span className="text-xs font-medium">{review.comments?.length || 0}</span>
                       </button>
 
@@ -1404,10 +1408,10 @@ export default function MediaViewer({
                         onDragStart={(e) => e.preventDefault()}
                         onDrag={(e) => e.preventDefault()}
                         data-no-drag="true"
-                        className="flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-14 h-14"
+                        className="flex flex-col items-center justify-center p-2 sm:p-3 bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 text-white hover:bg-black/60 hover:scale-110 transition-all duration-200 shadow-lg w-12 h-12 sm:w-14 sm:h-14"
                         style={{ touchAction: 'none' }}
                       >
-                        <Share2 className="w-7 h-7" />
+                        <Share2 className="w-6 h-6 sm:w-7 sm:h-7" />
                       </button>
                     </>
                   )

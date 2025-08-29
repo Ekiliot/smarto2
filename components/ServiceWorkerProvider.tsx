@@ -184,16 +184,7 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
 
 
 
-      {/* Кнопка информации о кеше (только в development) */}
-      {process.env.NODE_ENV === 'development' && isActive && (
-        <button
-          onClick={() => setShowCacheInfo(true)}
-          className="fixed bottom-4 left-4 z-40 p-3 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-700 transition-colors"
-          title="Информация о кеше"
-        >
-          <Info className="w-4 h-4" />
-        </button>
-      )}
+
 
       {/* Модальное окно информации о кеше */}
       <AnimatePresence>

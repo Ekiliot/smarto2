@@ -123,7 +123,7 @@ export default function CreateReviewPage() {
         key={i}
         type="button"
         onClick={() => setRating(i + 1)}
-        className={`w-10 h-10 transition-all duration-200 ${
+        className={`w-8 h-8 sm:w-10 sm:h-10 transition-all duration-200 ${
           i < rating 
             ? 'text-yellow-400 fill-current scale-110' 
             : 'text-gray-300 hover:text-yellow-300 hover:scale-105'
@@ -138,18 +138,18 @@ export default function CreateReviewPage() {
     if (media.length === 0) return null
 
     return (
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         {media.map((file, index) => (
           <div key={index} className="relative group">
             {file.type.startsWith('image/') ? (
               <img
                 src={URL.createObjectURL(file)}
                 alt="Preview"
-                className="w-full h-24 object-cover rounded-lg"
+                className="w-full h-20 sm:h-24 object-cover rounded-lg"
               />
             ) : (
-              <div className="w-full h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                <Video className="w-8 h-8 text-gray-400" />
+              <div className="w-full h-20 sm:h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                <Video className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
               </div>
             )}
             
@@ -157,17 +157,17 @@ export default function CreateReviewPage() {
             <button
               type="button"
               onClick={() => removeFile(index)}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+              className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
             
             {/* Индикатор типа файла */}
             <div className="absolute bottom-1 left-1">
               {file.type.startsWith('image/') ? (
-                <ImageIcon className="w-4 h-4 text-white drop-shadow-lg" />
+                <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white drop-shadow-lg" />
               ) : (
-                <Video className="w-4 h-4 text-white drop-shadow-lg" />
+                <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white drop-shadow-lg" />
               )}
             </div>
           </div>
@@ -188,19 +188,19 @@ export default function CreateReviewPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => router.back()}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
                 Оставить отзыв
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                 {productName}
               </p>
             </div>
@@ -209,23 +209,23 @@ export default function CreateReviewPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700"
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Рейтинг */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 sm:mb-4">
                 Ваша оценка *
               </label>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-1 sm:gap-2">
                 {renderStars()}
               </div>
               {rating > 0 && (
-                <p className="text-center mt-3 text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-center mt-2 sm:mt-3 text-sm text-gray-600 dark:text-gray-400">
                   {rating} из 5 звезд
                 </p>
               )}
@@ -243,8 +243,8 @@ export default function CreateReviewPage() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Расскажите о вашем опыте использования товара..."
                 required
-                rows={6}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+                rows={5}
+                className="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none text-base"
               />
             </div>
 
@@ -256,7 +256,7 @@ export default function CreateReviewPage() {
               
               {/* Drag & Drop зона */}
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-colors ${
                   dragActive
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                     : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
@@ -266,14 +266,14 @@ export default function CreateReviewPage() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2 sm:mb-3" />
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-2">
                   Перетащите файлы сюда или
                 </p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
+                  className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium text-sm sm:text-base"
                 >
                   выберите файлы
                 </button>
@@ -296,8 +296,8 @@ export default function CreateReviewPage() {
 
               {/* Превью загруженных файлов */}
               {media.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <div className="mt-3 sm:mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
                     Загруженные файлы ({media.length})
                   </h4>
                   {renderMediaPreview()}
@@ -306,18 +306,18 @@ export default function CreateReviewPage() {
             </div>
 
             {/* Кнопки */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="w-full sm:flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-base font-medium"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || rating === 0 || !text.trim()}
-                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 px-4 sm:px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-base font-medium"
               >
                 {isSubmitting ? (
                   <>
